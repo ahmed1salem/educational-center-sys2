@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>نظام إدارة المركز التعليمي (Google Sheets)</title>
+    <title>نظام إدارة المركز التعليمي (SheetDB)</title>
     
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.rtl.min.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
@@ -50,14 +50,12 @@
 </head>
 <body>
 
-<!-- Loader Screen -->
 <div id="loader-screen" style="display: none;">
     <div class="spinner-border text-light" role="status">
         <span class="visually-hidden">جار التحميل...</span>
     </div>
 </div>
 
-<!-- Login Screen -->
 <div id="login-screen">
     <div id="login-box" class="text-center">
         <h3 class="mb-4">تسجيل الدخول</h3>
@@ -73,7 +71,6 @@
 </div>
 
 <div id="app-wrapper">
-    <!-- Top Navbar -->
     <nav class="navbar navbar-dark bg-dark sticky-top flex-md-nowrap p-0 shadow">
         <a class="navbar-brand col-md-3 col-lg-2 me-0 px-3" href="#">إدارة المركز</a>
         <button class="navbar-toggler position-absolute d-md-none collapsed" type="button" data-bs-toggle="offcanvas" data-bs-target="#mobile-sidebar" aria-controls="mobile-sidebar">
@@ -81,7 +78,6 @@
         </button>
     </nav>
 
-    <!-- Mobile Sidebar (Offcanvas) -->
     <div class="offcanvas offcanvas-start bg-dark text-white" tabindex="-1" id="mobile-sidebar" aria-labelledby="mobile-sidebar-label">
         <div class="offcanvas-header">
             <h5 class="offcanvas-title" id="mobile-sidebar-label">القائمة</h5>
@@ -94,13 +90,11 @@
 
     <div class="container-fluid">
         <div class="row">
-            <!-- Desktop Sidebar -->
             <nav id="sidebar" class="col-md-3 col-lg-2 d-none d-md-block sidebar p-3">
                 <ul class="nav flex-column" id="desktop-nav-links"></ul>
             </nav>
 
             <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4 pt-4 main-content">
-                <!-- Pages are identical to the previous version -->
                 <div id="dashboard" class="page active">
                     <h3>لوحة التحكم</h3>
                     <div class="row mt-4">
@@ -226,20 +220,20 @@
 
 <script>
 // ===================================================================================
-// ===== إعدادات SHEET.BEST - هام جداً =====
+// ===== إعدادات SHEETDB.IO - هام جداً =====
 // ===================================================================================
-// 1. اتبع دليل الإعداد الذي تم تزويدك به لإنشاء جدول بيانات جوجل وربطه بـ Sheet.best.
-// 2. الصق رابط الاتصال (Connection URL) الذي حصلت عليه من موقع Sheet.best هنا.
-const SHEET_BEST_URL = "https://api.sheetbest.com/sheets/ddd07e86-51fb-4c28-8ed8-550e887ade83";
+// 1. اتبع دليل الإعداد الذي تم تزويدك به لإنشاء جدول بيانات جوجل وربطه بـ SheetDB.
+// 2. الصق رابط واجهة برمجة التطبيقات (API Endpoint) الذي حصلت عليه من موقع SheetDB هنا.
+const SHEETDB_URL = "https://sheetdb.io/api/v1/ahg3k8j1ewx6j";
 
 // كلمة المرور للدخول إلى النظام
 const APP_PASSWORD = '123456789'; // يمكنك تغييرها
 // ===================================================================================
 
 // ** FIX: Add a check for the placeholder URL **
-if (SHEET_BEST_URL.includes("الصق هنا")) {
-    alert("خطأ في الإعداد: يرجى لصق رابط الاتصال (Connection URL) الخاص بك من موقع Sheet.best في متغير SHEET_BEST_URL داخل الكود.");
-    throw new Error("Sheet.best URL is not configured.");
+if (SHEETDB_URL.includes("الصق هنا")) {
+    alert("خطأ في الإعداد: يرجى لصق رابط API الخاص بك من موقع SheetDB في متغير SHEETDB_URL داخل الكود.");
+    throw new Error("SheetDB URL is not configured.");
 }
 
 
@@ -253,21 +247,24 @@ let allAttendance = [];
 let allPayments = [];
 
 // ===== API HELPER =====
-async function sheetBestFetch(tabName, options = {}) {
-    const url = `${SHEET_BEST_URL}/tabs/${tabName}`;
+async function sheetDbFetch(params = '', options = {}) {
+    const url = `${SHEETDB_URL}${params}`;
     try {
         const response = await fetch(url, options);
         if (!response.ok) {
             const errorData = await response.json();
-            console.error(`Sheet.best Error (${response.status}):`, errorData);
-            throw new Error('فشل الاتصال بـ Sheet.best.');
+            console.error(`SheetDB Error (${response.status}):`, errorData);
+            throw new Error('فشل الاتصال بـ SheetDB.');
+        }
+        // For DELETE requests, response might be empty
+        if (options.method === 'DELETE') {
+            return { "deleted": 1 };
         }
         return await response.json();
     } catch (error) {
         console.error('Fetch Error:', error);
-        alert('حدث خطأ في الشبكة. يرجى التحقق من اتصالك بالإنترنت ورابط Sheet.best.');
-        // ** FIX: Return an empty array on failure to prevent crashes **
-        return []; 
+        alert('حدث خطأ في الشبكة. يرجى التحقق من اتصالك بالإنترنت ورابط SheetDB.');
+        return []; // Return an empty array on failure to prevent crashes
     }
 }
 
@@ -322,29 +319,27 @@ function showPage(pageId, studentId = null) {
 async function loadAllData() {
     document.getElementById('loader-screen').style.display = 'flex';
     
-    // ** FIX: Wrap data loading in a try...catch block to handle promise rejections **
     try {
         const [teachersRes, groupsRes, studentsRes, attendanceRes, paymentsRes, examsRes] = await Promise.all([
-            sheetBestFetch('Teachers'),
-            sheetBestFetch('Groups'),
-            sheetBestFetch('Students'),
-            sheetBestFetch('Attendance'),
-            sheetBestFetch('Payments'),
-            sheetBestFetch('Exams')
+            sheetDbFetch('?sheet=Teachers'),
+            sheetDbFetch('?sheet=Groups'),
+            sheetDbFetch('?sheet=Students'),
+            sheetDbFetch('?sheet=Attendance'),
+            sheetDbFetch('?sheet=Payments'),
+            sheetDbFetch('?sheet=Exams')
         ]);
 
         allTeachers = teachersRes;
         allGroups = groupsRes;
         allStudents = studentsRes;
-        // ** FIX: Ensure attendanceRes is an array before sorting **
         allAttendance = (attendanceRes || []).sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
         allPayments = paymentsRes;
         allExams = (examsRes || []).map(exam => ({ ...exam, grades: JSON.parse(exam.grades || '[]') }));
 
         renderAll();
     } catch (error) {
-        console.error("Failed to load data from Sheet.best:", error);
-        alert("فشل تحميل البيانات. يرجى التأكد من صحة رابط Sheet.best وتنسيق الأعمدة في جدول البيانات.");
+        console.error("Failed to load data from SheetDB:", error);
+        alert("فشل تحميل البيانات. يرجى التأكد من صحة رابط SheetDB وتنسيق الأعمدة في جدول البيانات.");
     } finally {
         document.getElementById('loader-screen').style.display = 'none';
     }
@@ -377,7 +372,7 @@ function renderDashboard() {
 function renderTeachersTable() {
     const tableBody = document.getElementById('teachers-table-body');
     tableBody.innerHTML = '';
-    allTeachers.forEach(t => { tableBody.innerHTML += `<tr><td>${t.name}</td><td>${t.subject}</td><td>${t.percentage}%</td><td><button class="btn btn-danger btn-sm" onclick="deleteData('Teachers', '${t.id}')">حذف</button></td></tr>`; });
+    allTeachers.forEach(t => { tableBody.innerHTML += `<tr><td>${t.name}</td><td>${t.subject}</td><td>${t.percentage}%</td><td><button class="btn btn-danger btn-sm" onclick="deleteData('Teachers', 'id', '${t.id}')">حذف</button></td></tr>`; });
 }
 
 function populateTeachersDropdown() {
@@ -390,7 +385,7 @@ function renderGroupsTable() {
     const tableBody = document.getElementById('groups-table-body');
     tableBody.innerHTML = '';
     allGroups.forEach(g => {
-        tableBody.innerHTML += `<tr><td>${g.name}</td><td>${g.teacherName || 'غير محدد'}</td><td>${g.schedule}</td><td><button class="btn btn-danger btn-sm" onclick="deleteData('Groups', '${g.id}')">حذف</button></td></tr>`;
+        tableBody.innerHTML += `<tr><td>${g.name}</td><td>${g.teacherName || 'غير محدد'}</td><td>${g.schedule}</td><td><button class="btn btn-danger btn-sm" onclick="deleteData('Groups', 'id', '${g.id}')">حذف</button></td></tr>`;
     });
 }
 
@@ -415,7 +410,7 @@ function renderStudentsTable(filter = '') {
             <td>${s.stage}</td>
             <td>
                 <button class="btn btn-info btn-sm" onclick="showPage('student-details', '${s.id}')">التفاصيل</button>
-                <button class="btn btn-danger btn-sm" onclick="deleteData('Students', '${s.id}')">حذف</button>
+                <button class="btn btn-danger btn-sm" onclick="deleteData('Students', 'id', '${s.id}')">حذف</button>
             </td>
         </tr>`;
     });
@@ -519,17 +514,17 @@ function renderStudentDetails() {
 
 // ===== DATA HANDLING LOGIC =====
 async function addData(tabName, data) {
-    await sheetBestFetch(tabName, {
+    await sheetDbFetch(`?sheet=${tabName}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data)
+        body: JSON.stringify({ data: [data] })
     });
     loadAllData(); // Reload all data to reflect changes
 }
 
-async function deleteData(tabName, recordId) {
+async function deleteData(tabName, key, value) {
     if (confirm(`هل أنت متأكد من الحذف؟`)) {
-        await sheetBestFetch(`${tabName}/id/${recordId}`, { method: 'DELETE' });
+        await sheetDbFetch(`/${key}/${value}?sheet=${tabName}`, { method: 'DELETE' });
         loadAllData(); // Reload all data
     }
 }
