@@ -1,0 +1,721 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>نظام إدارة المركز التعليمي (سحابي)</title>
+    
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.rtl.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    
+    <style>
+        body { 
+            background-color: #f8f9fa; 
+            font-family: 'Tajawal', sans-serif; 
+        }
+        @import url('https://fonts.googleapis.com/css2?family=Tajawal:wght@400;700&display=swap');
+        
+        #login-screen, #loader-screen { 
+            position: fixed; 
+            top: 0; 
+            left: 0; 
+            width: 100%; 
+            height: 100%; 
+            background-color: #343a40; 
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            z-index: 9999; 
+        }
+        #login-box { 
+            background: white; 
+            padding: 2rem; 
+            border-radius: 0.5rem; 
+            width: 100%; 
+            max-width: 400px; 
+            box-shadow: 0 0 15px rgba(0,0,0,0.2); 
+        }
+        #app-wrapper { display: none; }
+        .main-content .page { display: none; }
+        .main-content .page.active { display: block; }
+        
+        .sidebar { 
+            height: calc(100vh - 56px);
+            position: sticky; 
+            top: 56px;
+            background-color: #343a40; 
+            color: white; 
+            overflow-y: auto; 
+        }
+        .sidebar .nav-link { 
+            color: #adb5bd; cursor: pointer; border-radius: 0.25rem; margin-bottom: 0.25rem; display: flex; align-items: center;
+        }
+        .sidebar .nav-link i { margin-left: 10px; }
+        .sidebar .nav-link:hover, .sidebar .nav-link.active { color: white; background-color: #495057; }
+
+        .offcanvas-body .nav-link { color: #adb5bd; font-size: 1.1rem; padding: 0.75rem 1rem; }
+        .offcanvas-body .nav-link:hover, .offcanvas-body .nav-link.active { color: white; background-color: #495057; }
+
+        .stat-card { border: none; border-radius: 0.5rem; color: white; transition: transform 0.2s; }
+        .stat-card:hover { transform: translateY(-5px); }
+        .card-icon { font-size: 3rem; opacity: 0.7; }
+        #receipt-modal-content { font-family: 'Courier New', Courier, monospace; text-align: center; }
+        .table-responsive { max-height: 450px; overflow-y: auto; }
+        .card { border-radius: 0.5rem; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+        .navbar-brand { font-weight: bold; }
+    </style>
+</head>
+<body>
+
+<!-- Loader Screen -->
+<div id="loader-screen">
+    <div class="spinner-border text-light" role="status">
+        <span class="visually-hidden">جار التحميل...</span>
+    </div>
+</div>
+
+<!-- Login Screen -->
+<div id="login-screen" style="display: none;">
+    <div id="login-box" class="text-center">
+        <h3 class="mb-4">تسجيل الدخول</h3>
+        <form id="login-form">
+            <div class="form-floating mb-3">
+                <input type="email" class="form-control" id="email" placeholder="name@example.com" required>
+                <label for="email">البريد الإلكتروني</label>
+            </div>
+            <div class="form-floating mb-3">
+                <input type="password" class="form-control" id="password" placeholder="Password" required>
+                <label for="password">كلمة المرور</label>
+            </div>
+            <button type="submit" class="btn btn-primary w-100">دخول</button>
+            <div id="login-error" class="text-danger mt-2" style="display: none;">البريد الإلكتروني أو كلمة المرور غير صحيحة.</div>
+        </form>
+    </div>
+</div>
+
+<div id="app-wrapper">
+    <!-- Top Navbar -->
+    <nav class="navbar navbar-dark bg-dark sticky-top flex-md-nowrap p-0 shadow">
+        <a class="navbar-brand col-md-3 col-lg-2 me-0 px-3" href="#">إدارة المركز</a>
+        <button class="navbar-toggler position-absolute d-md-none collapsed" type="button" data-bs-toggle="offcanvas" data-bs-target="#mobile-sidebar" aria-controls="mobile-sidebar">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+    </nav>
+
+    <!-- Mobile Sidebar (Offcanvas) -->
+    <div class="offcanvas offcanvas-start bg-dark text-white" tabindex="-1" id="mobile-sidebar" aria-labelledby="mobile-sidebar-label">
+        <div class="offcanvas-header">
+            <h5 class="offcanvas-title" id="mobile-sidebar-label">القائمة</h5>
+            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+        </div>
+        <div class="offcanvas-body">
+            <ul class="nav flex-column" id="mobile-nav-links">
+                <!-- Links will be dynamically inserted here -->
+            </ul>
+        </div>
+    </div>
+
+    <div class="container-fluid">
+        <div class="row">
+            <!-- Desktop Sidebar -->
+            <nav id="sidebar" class="col-md-3 col-lg-2 d-none d-md-block sidebar p-3">
+                <ul class="nav flex-column" id="desktop-nav-links">
+                    <!-- Links will be dynamically inserted here -->
+                </ul>
+            </nav>
+
+            <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4 pt-4 main-content">
+                <!-- All pages are the same as before -->
+                 <div id="dashboard" class="page active">
+                    <h3>لوحة التحكم</h3>
+                    <div class="row mt-4">
+                        <div class="col-lg-3 col-md-6 mb-4"><div class="card stat-card bg-primary p-3"><div class="d-flex justify-content-between align-items-center"><div><h5>الطلاب</h5><h2 id="total-students-stat">0</h2></div><div class="card-icon">🧑‍🎓</div></div></div></div>
+                        <div class="col-lg-3 col-md-6 mb-4"><div class="card stat-card bg-info p-3"><div class="d-flex justify-content-between align-items-center"><div><h5>المدرسون</h5><h2 id="total-teachers-stat">0</h2></div><div class="card-icon">👨‍🏫</div></div></div></div>
+                        <div class="col-lg-3 col-md-6 mb-4"><div class="card stat-card bg-secondary p-3"><div class="d-flex justify-content-between align-items-center"><div><h5>المجموعات</h5><h2 id="total-groups-stat">0</h2></div><div class="card-icon">📚</div></div></div></div>
+                        <div class="col-lg-3 col-md-6 mb-4"><div class="card stat-card bg-success p-3"><div class="d-flex justify-content-between align-items-center"><div><h5>الإيرادات</h5><h2 id="total-revenue-stat">0</h2></div><div class="card-icon">💵</div></div></div></div>
+                    </div>
+                </div>
+                
+                <div id="teachers" class="page">
+                     <h3>إدارة المدرسين</h3>
+                    <div class="card p-3 mb-4"><form id="add-teacher-form" class="row g-3 align-items-end"><div class="col-md-5"><label class="form-label">اسم المدرس</label><input type="text" id="teacher-name" class="form-control" required></div><div class="col-md-4"><label class="form-label">المادة</label><input type="text" id="teacher-subject" class="form-control" required></div><div class="col-md-2"><label class="form-label">النسبة (%)</label><input type="number" id="teacher-percentage" class="form-control" required min="0" max="100"></div><div class="col-md-1"><button type="submit" class="btn btn-primary w-100">إضافة</button></div></form></div>
+                    <div class="card p-3"><h5 class="card-title">قائمة المدرسين</h5><div class="table-responsive"><table class="table table-striped"><thead><tr><th>الاسم</th><th>المادة</th><th>النسبة</th><th>إجراءات</th></tr></thead><tbody id="teachers-table-body"></tbody></table></div></div>
+                </div>
+
+                <div id="groups" class="page">
+                    <h3>إدارة المجموعات</h3>
+                    <div class="card p-3 mb-4"><form id="add-group-form" class="row g-3 align-items-end"><div class="col-md-4"><label class="form-label">اسم المجموعة</label><input type="text" id="group-name" class="form-control" required></div><div class="col-md-3"><label class="form-label">المدرس</label><select id="group-teacher" class="form-select" required></select></div><div class="col-md-4"><label class="form-label">المواعيد</label><input type="text" id="group-schedule" class="form-control" placeholder="مثال: سبت - اثنين (5م)" required></div><div class="col-md-1"><button type="submit" class="btn btn-primary w-100">إنشاء</button></div></form></div>
+                    <div class="card p-3"><h5 class="card-title">قائمة المجموعات</h5><div class="table-responsive"><table class="table table-striped"><thead><tr><th>اسم المجموعة</th><th>المدرس</th><th>المواعيد</th><th>إجراءات</th></tr></thead><tbody id="groups-table-body"></tbody></table></div></div>
+                </div>
+
+                <div id="students" class="page">
+                    <h3>إدارة الطلاب</h3>
+                    <div class="card p-3 mb-4"><form id="add-student-form" class="row g-3 align-items-end"><div class="col-md-3"><label class="form-label">اسم الطالب</label><input type="text" id="name" class="form-control" required></div><div class="col-md-3"><label class="form-label">المرحلة</label><input type="text" id="stage" class="form-control" required></div><div class="col-md-3"><label class="form-label">هاتف ولي الأمر</label><input type="tel" id="parentPhone" class="form-control" required></div><div class="col-md-2"><label class="form-label">المجموعة</label><select id="student-group" class="form-select" required></select></div><div class="col-md-1"><button type="submit" class="btn btn-primary w-100">إضافة</button></div></form></div>
+                    <div class="card p-3"><h5 class="card-title">قائمة الطلاب</h5><input type="text" id="search-student" class="form-control mb-3" placeholder="ابحث بالاسم أو الكود..."><div class="table-responsive"><table class="table table-striped"><thead><tr><th>الاسم</th><th>الكود</th><th>المجموعة</th><th>المرحلة</th><th>إجراءات</th></tr></thead><tbody id="students-table-body"></tbody></table></div></div>
+                </div>
+
+                <div id="attendance" class="page">
+                    <h3>الحضور والغياب</h3>
+                    <div class="card p-3 mb-4">
+                        <h5>تسجيل الحضور بالباركود</h5>
+                        <p>قم بتوجيه قارئ الباركود نحو حقل الإدخال أدناه.</p>
+                        <input type="text" id="barcode-input" class="form-control form-control-lg" placeholder="في انتظار قراءة الباركود...">
+                        <div id="attendance-feedback" class="mt-3"></div>
+                    </div>
+                     <div class="card p-3">
+                        <h5 class="card-title">سجل الحضور</h5>
+                        <div class="row mb-3 g-3">
+                            <div class="col-md-4"><label class="form-label">فلترة بالتاريخ</label><input type="date" id="attendance-date-filter" class="form-control"></div>
+                        </div>
+                        <div class="table-responsive">
+                            <table class="table table-striped">
+                                <thead><tr><th>اسم الطالب</th><th>المجموعة</th><th>التاريخ</th><th>الوقت</th></tr></thead>
+                                <tbody id="attendance-log-body"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="grades" class="page">
+                    <h3>الامتحانات والدرجات</h3>
+                    <div class="card p-3 mb-4">
+                        <h5>إضافة امتحان جديد</h5>
+                        <form id="add-exam-form" class="row g-3 align-items-end">
+                            <div class="col-md-5"><label class="form-label">اختر المجموعة</label><select id="exam-group" class="form-select" required></select></div>
+                            <div class="col-md-5"><label class="form-label">اسم الامتحان</label><input type="text" id="exam-name" class="form-control" placeholder="مثال: امتحان شهر أكتوبر" required></div>
+                            <div class="col-md-2"><button type="submit" class="btn btn-primary w-100">بدء الرصد</button></div>
+                        </form>
+                    </div>
+                    <div class="card p-3 mb-4" id="grades-entry-card" style="display:none;">
+                        <h5 id="grades-entry-title"></h5>
+                        <div class="table-responsive"><table class="table"><thead><tr><th>اسم الطالب</th><th>الدرجة</th></tr></thead><tbody id="grades-entry-body"></tbody></table></div>
+                        <button class="btn btn-success mt-3" id="save-grades-btn">حفظ جميع الدرجات</button>
+                    </div>
+                     <div class="card p-3">
+                        <h5 class="card-title">عرض نتائج الامتحانات</h5>
+                        <div class="row g-3 mb-3 align-items-end">
+                            <div class="col-md-5"><label class="form-label">اختر المجموعة</label><select id="view-exam-group-filter" class="form-select"></select></div>
+                            <div class="col-md-5"><label class="form-label">اختر الامتحان</label><select id="view-exam-filter" class="form-select"></select></div>
+                        </div>
+                        <div class="table-responsive">
+                            <table class="table table-striped">
+                                <thead><tr><th>اسم الطالب</th><th>الدرجة</th></tr></thead>
+                                <tbody id="exam-results-body"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="finance" class="page">
+                    <h3>الإدارة المالية</h3>
+                    <div class="card p-3 mb-4"><form id="add-payment-form" class="row g-3 align-items-end"><div class="col-md-5"><label class="form-label">كود الطالب</label><input type="text" class="form-control" id="payment-student-id" required></div><div class="col-md-5"><label class="form-label">المبلغ المدفوع</label><input type="number" class="form-control" id="payment-amount" required></div><div class="col-md-2"><button type="submit" class="btn btn-success w-100">تسجيل</button></div></form></div>
+                    <div class="card p-3"><h5 class="card-title">حسابات المدرسين</h5><div class="table-responsive"><table class="table table-striped"><thead><tr><th>المدرس</th><th>إجمالي الإيرادات</th><th>نسبة المدرس</th><th>مستحقات المدرس</th></tr></thead><tbody id="teacher-finances-table-body"></tbody></table></div></div>
+                </div>
+                
+                 <div id="student-details" class="page">
+                    <button class="btn btn-secondary mb-3" onclick="showPage('students')"><i class="bi bi-arrow-right"></i> العودة إلى قائمة الطلاب</button>
+                    <h3 id="student-details-name"></h3>
+                    <div class="row">
+                        <div class="col-md-6 mb-4">
+                            <div class="card p-3">
+                                <h5 class="card-title">سجل الحضور</h5>
+                                <div class="table-responsive">
+                                    <table class="table table-striped">
+                                        <thead><tr><th>التاريخ</th><th>الوقت</th></tr></thead>
+                                        <tbody id="student-attendance-body"></tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6 mb-4">
+                            <div class="card p-3">
+                                <h5 class="card-title">سجل الدرجات</h5>
+                                <div class="table-responsive">
+                                    <table class="table table-striped">
+                                        <thead><tr><th>الامتحان</th><th>الدرجة</th></tr></thead>
+                                        <tbody id="student-grades-body"></tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="receiptModal" tabindex="-1"><div class="modal-dialog"><div class="modal-content"><div class="modal-header"><h5 class="modal-title">إيصال استلام</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div><div class="modal-body" id="receipt-modal-content"></div><div class="modal-footer"><button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إغلاق</button><button type="button" class="btn btn-primary" onclick="printReceipt()">طباعة</button></div></div></div></div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
+<!-- Firebase SDK -->
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+
+<script>
+// ===================================================================================
+// ===== هام جداً: إعدادات FIREBASE =====
+// ===================================================================================
+// 1. اذهب إلى https://console.firebase.google.com
+// 2. أنشئ مشروعاً جديداً (Project).
+// 3. في صفحة المشروع، اضغط على أيقونة الويب (</>) لإنشاء تطبيق ويب جديد.
+// 4. أعط التطبيق اسماً (مثلاً: "نظام المركز") ثم اضغط "Register app".
+// 5. ستظهر لك شفرة تحتوي على `firebaseConfig`. انسخ هذا الكائن (object) والصقه هنا بالأسفل.
+// 6. اذهب إلى قسم "Authentication" في قائمة مشروعك، اختر "Sign-in method"، وقم بتفعيل "Email/Password".
+// 7. اذهب إلى قسم "Firestore Database"، اضغط "Create database"، اختر "Start in test mode" (للبدء السريع)، واختر الموقع الجغرافي.
+//
+const firebaseConfig = {
+    apiKey: "ضع هنا مفتاح الواجهة البرمجية الخاص بك",
+    authDomain: "ضع هنا نطاق المصادقة الخاص بك",
+    projectId: "ضع هنا معرف المشروع الخاص بك",
+    storageBucket: "ضع هنا حاوية التخزين الخاصة بك",
+    messagingSenderId: "ضع هنا معرف مرسل الرسائل الخاص بك",
+    appId: "ضع هنا معرف التطبيق الخاص بك"
+};
+
+// Initialize Firebase
+firebase.initializeApp(firebaseConfig);
+const auth = firebase.auth();
+const db = firebase.firestore();
+// ===================================================================================
+
+let currentStudentDetailsId = null;
+let allStudents = [];
+let allGroups = [];
+let allTeachers = [];
+let allExams = [];
+
+// ===== AUTH LOGIC =====
+auth.onAuthStateChanged(user => {
+    const loader = document.getElementById('loader-screen');
+    const loginScreen = document.getElementById('login-screen');
+    const appWrapper = document.getElementById('app-wrapper');
+
+    if (user) {
+        // User is signed in.
+        loader.style.display = 'none';
+        loginScreen.style.display = 'none';
+        appWrapper.style.display = 'block';
+        initializeApp();
+    } else {
+        // User is signed out.
+        loader.style.display = 'none';
+        loginScreen.style.display = 'flex';
+        appWrapper.style.display = 'none';
+    }
+});
+
+function handleLogin(e) {
+    e.preventDefault();
+    const email = document.getElementById('email').value;
+    const password = document.getElementById('password').value;
+    const loginError = document.getElementById('login-error');
+
+    auth.signInWithEmailAndPassword(email, password)
+        .catch(error => {
+            console.error("Login Error:", error);
+            loginError.style.display = 'block';
+        });
+}
+
+function logout() {
+    auth.signOut();
+}
+
+
+// ===== UI LOGIC =====
+function showPage(pageId, studentId = null) {
+    currentStudentDetailsId = studentId; 
+    document.querySelectorAll('.main-content .page').forEach(p => p.classList.remove('active'));
+    document.getElementById(pageId).classList.add('active');
+    
+    const navLinks = document.querySelectorAll('.sidebar .nav-link, .offcanvas-body .nav-link');
+    navLinks.forEach(l => l.classList.remove('active'));
+    
+    const activeLinks = document.querySelectorAll(`.nav-link[onclick*="showPage('${pageId}')"]`);
+    activeLinks.forEach(link => {
+        if (!link.closest('#student-details')) {
+             link.classList.add('active');
+        }
+    });
+
+    if (pageId === 'student-details') renderStudentDetails();
+    if (pageId === 'grades') { populateGroupsDropdown('exam-group'); populateGroupsDropdown('view-exam-group-filter'); }
+    if (pageId === 'students') { populateGroupsDropdown('student-group'); }
+    if (pageId === 'groups') { populateTeachersDropdown(); }
+}
+
+// ===== REAL-TIME DATA LISTENERS =====
+function setupRealtimeListeners() {
+    db.collection('teachers').onSnapshot(snapshot => {
+        allTeachers = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        renderTeachersTable();
+        renderTeacherFinances();
+        populateTeachersDropdown();
+    });
+
+    db.collection('groups').onSnapshot(snapshot => {
+        allGroups = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        renderGroupsTable();
+        populateGroupsDropdown('student-group');
+        populateGroupsDropdown('exam-group');
+        populateGroupsDropdown('view-exam-group-filter');
+    });
+
+    db.collection('students').onSnapshot(snapshot => {
+        allStudents = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        renderStudentsTable();
+        renderDashboard();
+    });
+    
+    db.collection('payments').onSnapshot(snapshot => {
+        const payments = snapshot.docs.map(doc => doc.data());
+        renderDashboard(payments);
+        renderTeacherFinances();
+    });
+
+    db.collection('attendance').orderBy('timestamp', 'desc').onSnapshot(snapshot => {
+        const attendance = snapshot.docs.map(doc => ({id: doc.id, ...doc.data()}));
+        renderAttendanceLog(attendance);
+    });
+
+    db.collection('exams').onSnapshot(snapshot => {
+        allExams = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        populateExamFilter();
+    });
+}
+
+
+// ===== RENDER FUNCTIONS (Now use local arrays updated by listeners) =====
+function renderDashboard(payments = null) {
+    document.getElementById('total-students-stat').innerText = allStudents.length;
+    document.getElementById('total-teachers-stat').innerText = allTeachers.length;
+    document.getElementById('total-groups-stat').innerText = allGroups.length;
+    if (payments) {
+        const totalRevenue = payments.reduce((sum, p) => sum + p.amount, 0);
+        document.getElementById('total-revenue-stat').innerText = `${totalRevenue} ج`;
+    }
+}
+
+function renderTeachersTable() {
+    const tableBody = document.getElementById('teachers-table-body');
+    tableBody.innerHTML = '';
+    allTeachers.forEach(t => { tableBody.innerHTML += `<tr><td>${t.name}</td><td>${t.subject}</td><td>${t.percentage}%</td><td><button class="btn btn-danger btn-sm" onclick="deleteData('teachers', '${t.id}')">حذف</button></td></tr>`; });
+}
+
+function populateTeachersDropdown() {
+    const select = document.getElementById('group-teacher');
+    select.innerHTML = '<option value="">اختر مدرس...</option>';
+    allTeachers.forEach(t => { select.innerHTML += `<option value="${t.name}">${t.name}</option>`; });
+}
+
+function renderGroupsTable() {
+    const tableBody = document.getElementById('groups-table-body');
+    tableBody.innerHTML = '';
+    allGroups.forEach(g => {
+        tableBody.innerHTML += `<tr><td>${g.name}</td><td>${g.teacherName || 'غير محدد'}</td><td>${g.schedule}</td><td><button class="btn btn-danger btn-sm" onclick="deleteData('groups', '${g.id}')">حذف</button></td></tr>`;
+    });
+}
+
+function populateGroupsDropdown(selectId) {
+    const select = document.getElementById(selectId);
+    const currentValue = select.value;
+    select.innerHTML = '<option value="">اختر مجموعة...</option>';
+    allGroups.forEach(g => { select.innerHTML += `<option value="${g.id}">${g.name}</option>`; });
+    select.value = currentValue;
+}
+
+function renderStudentsTable(filter = '') {
+    const tableBody = document.getElementById('students-table-body');
+    tableBody.innerHTML = '';
+    const filteredStudents = allStudents.filter(s => s.name.toLowerCase().includes(filter.toLowerCase()) || s.barcode.toLowerCase().includes(filter.toLowerCase()));
+    filteredStudents.forEach(s => {
+        const group = allGroups.find(g => g.id === s.groupId);
+        tableBody.innerHTML += `<tr>
+            <td>${s.name}</td>
+            <td>${s.barcode}</td>
+            <td>${group ? group.name : 'بلا مجموعة'}</td>
+            <td>${s.stage}</td>
+            <td>
+                <button class="btn btn-info btn-sm" onclick="showPage('student-details', '${s.id}')">التفاصيل</button>
+                <button class="btn btn-danger btn-sm" onclick="deleteData('students', '${s.id}')">حذف</button>
+            </td>
+        </tr>`;
+    });
+}
+
+function renderTeacherFinances() {
+     db.collection('payments').get().then(paymentSnapshot => {
+        const payments = paymentSnapshot.docs.map(doc => doc.data());
+        const tableBody = document.getElementById('teacher-finances-table-body');
+        tableBody.innerHTML = '';
+        allTeachers.forEach(teacher => {
+            const teacherGroups = allGroups.filter(g => g.teacherName === teacher.name);
+            const teacherGroupIds = teacherGroups.map(g => g.id);
+            const teacherStudentIds = allStudents.filter(s => teacherGroupIds.includes(s.groupId)).map(s => s.id);
+            const totalRevenue = payments.filter(p => teacherStudentIds.includes(p.studentId)).reduce((sum, p) => sum + p.amount, 0);
+            const teacherShare = totalRevenue * (teacher.percentage / 100);
+            tableBody.innerHTML += `<tr><td>${teacher.name}</td><td>${totalRevenue.toFixed(2)} ج</td><td>${teacher.percentage}%</td><td>${teacherShare.toFixed(2)} ج</td></tr>`;
+        });
+    });
+}
+
+function renderAttendanceLog(attendanceData) {
+    const dateFilter = document.getElementById('attendance-date-filter').value;
+    const tableBody = document.getElementById('attendance-log-body');
+    tableBody.innerHTML = '';
+
+    let filteredData = attendanceData;
+    if (dateFilter) {
+        filteredData = attendanceData.filter(att => att.timestamp.toDate().toISOString().startsWith(dateFilter));
+    }
+
+    filteredData.forEach(att => {
+        const student = allStudents.find(s => s.id === att.studentId);
+        if (student) {
+            const group = allGroups.find(g => g.id === student.groupId);
+            const aDate = att.timestamp.toDate();
+            tableBody.innerHTML += `<tr>
+                <td>${student.name}</td>
+                <td>${group ? group.name : 'غير محدد'}</td>
+                <td>${aDate.toLocaleDateString('ar-EG')}</td>
+                <td>${aDate.toLocaleTimeString('ar-EG')}</td>
+            </tr>`;
+        }
+    });
+}
+
+function populateExamFilter() {
+    const groupId = document.getElementById('view-exam-group-filter').value;
+    const examSelect = document.getElementById('view-exam-filter');
+    examSelect.innerHTML = '<option value="">اختر امتحان...</option>';
+    if (groupId) {
+        const groupExams = allExams.filter(ex => ex.groupId === groupId);
+        groupExams.forEach(ex => {
+            examSelect.innerHTML += `<option value="${ex.id}">${ex.name}</option>`;
+        });
+    }
+    renderExamResults();
+}
+
+function renderExamResults() {
+    const examId = document.getElementById('view-exam-filter').value;
+    const tableBody = document.getElementById('exam-results-body');
+    tableBody.innerHTML = '';
+    if (examId) {
+        const exam = allExams.find(ex => ex.id === examId);
+        if (exam) {
+            exam.grades.forEach(grade => {
+                const student = allStudents.find(s => s.id === grade.studentId);
+                tableBody.innerHTML += `<tr>
+                    <td>${student ? student.name : 'طالب محذوف'}</td>
+                    <td>${grade.grade}</td>
+                </tr>`;
+            });
+        }
+    }
+}
+
+function renderStudentDetails() {
+    if (!currentStudentDetailsId) return;
+    const student = allStudents.find(s => s.id === currentStudentDetailsId);
+    if (!student) {
+        showPage('students');
+        return;
+    }
+
+    document.getElementById('student-details-name').innerText = `تفاصيل الطالب: ${student.name}`;
+    
+    db.collection('attendance').where('studentId', '==', student.id).orderBy('timestamp', 'desc').get().then(snapshot => {
+        const attendanceBody = document.getElementById('student-attendance-body');
+        attendanceBody.innerHTML = '';
+        snapshot.forEach(doc => {
+            const aDate = doc.data().timestamp.toDate();
+            attendanceBody.innerHTML += `<tr><td>${aDate.toLocaleDateString('ar-EG')}</td><td>${aDate.toLocaleTimeString('ar-EG')}</td></tr>`;
+        });
+    });
+
+    const gradesBody = document.getElementById('student-grades-body');
+    gradesBody.innerHTML = '';
+    allExams.forEach(exam => {
+        const gradeInfo = exam.grades.find(g => g.studentId === student.id);
+        if (gradeInfo) {
+            gradesBody.innerHTML += `<tr><td>${exam.name}</td><td>${gradeInfo.grade}</td></tr>`;
+        }
+    });
+}
+
+// ===== DATA HANDLING LOGIC (Now uses Firestore) =====
+function addTeacher(e) {
+    e.preventDefault();
+    db.collection('teachers').add({
+        name: document.getElementById('teacher-name').value,
+        subject: document.getElementById('teacher-subject').value,
+        percentage: parseInt(document.getElementById('teacher-percentage').value)
+    }).then(() => e.target.reset());
+}
+
+function addGroup(e) {
+    e.preventDefault();
+    db.collection('groups').add({
+        name: document.getElementById('group-name').value,
+        teacherName: document.getElementById('group-teacher').value,
+        schedule: document.getElementById('group-schedule').value
+    }).then(() => e.target.reset());
+}
+
+function addStudent(e) {
+    e.preventDefault();
+    const studentBarcode = `STU-${Date.now()}`;
+    db.collection('students').add({
+        name: document.getElementById('name').value,
+        stage: document.getElementById('stage').value,
+        parentPhone: document.getElementById('parentPhone').value,
+        groupId: document.getElementById('student-group').value,
+        barcode: studentBarcode
+    }).then(() => {
+        alert(`تمت إضافة الطالب بنجاح! كود الطالب (للباركود) هو: ${studentBarcode}`);
+        e.target.reset();
+    });
+}
+
+function addPayment(e) {
+    e.preventDefault();
+    const studentBarcode = document.getElementById('payment-student-id').value;
+    const student = allStudents.find(s => s.barcode === studentBarcode);
+    if (!student) { alert('خطأ: كود الطالب غير موجود.'); return; }
+    
+    const newPayment = { 
+        studentId: student.id, 
+        amount: parseFloat(document.getElementById('payment-amount').value), 
+        date: new Date()
+    };
+    
+    db.collection('payments').add(newPayment).then(() => {
+        document.getElementById('receipt-modal-content').innerHTML = `<h5>المركز التعليمي</h5><p>-------------------------</p><p><strong>الطالب:</strong> ${student.name}</p><p><strong>المبلغ:</strong> ${newPayment.amount.toFixed(2)} ج</p><p>-------------------------</p><p>شكرًا لكم!</p>`;
+        new bootstrap.Modal(document.getElementById('receiptModal')).show();
+        e.target.reset();
+    });
+}
+
+function handleAttendance(e) {
+    const barcode = e.target.value.trim();
+    if (barcode === '') return;
+    const student = allStudents.find(s => s.barcode === barcode);
+    const feedbackEl = document.getElementById('attendance-feedback');
+    if (student) {
+        db.collection('attendance').add({
+            studentId: student.id,
+            timestamp: new Date()
+        });
+        feedbackEl.innerHTML = `<div class="alert alert-success"><strong>حضور:</strong> ${student.name}<br><strong>الوقت:</strong> ${new Date().toLocaleTimeString()}</div>`;
+    } else {
+        feedbackEl.innerHTML = `<div class="alert alert-danger"><strong>خطأ:</strong> الطالب غير مسجل.</div>`;
+    }
+    setTimeout(() => { e.target.value = ''; feedbackEl.innerHTML = ''; e.target.focus(); }, 3000);
+}
+
+function startGradesEntry(e) {
+    e.preventDefault();
+    const groupId = document.getElementById('exam-group').value;
+    const examName = document.getElementById('exam-name').value;
+    if (!groupId) { alert('يرجى اختيار مجموعة أولاً.'); return; }
+
+    const studentsInGroup = allStudents.filter(s => s.groupId === groupId);
+    const tableBody = document.getElementById('grades-entry-body');
+    tableBody.innerHTML = '';
+    
+    studentsInGroup.forEach(student => {
+        tableBody.innerHTML += `<tr><td>${student.name}</td><td><input type="number" class="form-control grade-input" data-student-id="${student.id}" placeholder="ادخل الدرجة"></td></tr>`;
+    });
+    
+    document.getElementById('grades-entry-title').innerText = `رصد درجات امتحان "${examName}"`;
+    document.getElementById('grades-entry-card').style.display = 'block';
+}
+
+function saveGrades() {
+    const examName = document.getElementById('exam-name').value;
+    const groupId = document.getElementById('exam-group').value;
+    const gradeInputs = document.querySelectorAll('.grade-input');
+    
+    const newExam = {
+        name: examName,
+        groupId: groupId,
+        grades: []
+    };
+
+    gradeInputs.forEach(input => {
+        if (input.value) {
+            newExam.grades.push({
+                studentId: input.dataset.studentId,
+                grade: parseFloat(input.value)
+            });
+        }
+    });
+
+    db.collection('exams').add(newExam).then(() => {
+        alert('تم حفظ الدرجات بنجاح!');
+        document.getElementById('grades-entry-card').style.display = 'none';
+        document.getElementById('add-exam-form').reset();
+    });
+}
+
+function deleteData(collectionName, id) {
+    if (confirm(`هل أنت متأكد من الحذف؟ سيتم حذف كل البيانات المرتبطة.`)) {
+        db.collection(collectionName).doc(id).delete().catch(error => console.error("Error removing document: ", error));
+    }
+}
+
+// ===== APP INITIALIZATION =====
+function initializeApp() {
+    // Generate nav links
+    const navItems = `
+        <li class="nav-item"><a class="nav-link active" onclick="showPage('dashboard')" data-bs-dismiss="offcanvas"><i class="bi bi-grid-1x2-fill"></i> لوحة التحكم</a></li>
+        <li class="nav-item"><a class="nav-link" onclick="showPage('teachers')" data-bs-dismiss="offcanvas"><i class="bi bi-person-video3"></i> المدرسون</a></li>
+        <li class="nav-item"><a class="nav-link" onclick="showPage('groups')" data-bs-dismiss="offcanvas"><i class="bi bi-collection-fill"></i> المجموعات</a></li>
+        <li class="nav-item"><a class="nav-link" onclick="showPage('students')" data-bs-dismiss="offcanvas"><i class="bi bi-people-fill"></i> الطلاب</a></li>
+        <li class="nav-item"><a class="nav-link" onclick="showPage('attendance')" data-bs-dismiss="offcanvas"><i class="bi bi-check-circle-fill"></i> الحضور والغياب</a></li>
+        <li class="nav-item"><a class="nav-link" onclick="showPage('grades')" data-bs-dismiss="offcanvas"><i class="bi bi-pencil-square"></i> الامتحانات والدرجات</a></li>
+        <li class="nav-item"><a class="nav-link" onclick="showPage('finance')" data-bs-dismiss="offcanvas"><i class="bi bi-cash-stack"></i> الإدارة المالية</a></li>
+        <li class="nav-item mt-3"><a class="nav-link text-warning" onclick="logout()" data-bs-dismiss="offcanvas"><i class="bi bi-box-arrow-right"></i> تسجيل الخروج</a></li>
+    `;
+    document.getElementById('desktop-nav-links').innerHTML = navItems;
+    document.getElementById('mobile-nav-links').innerHTML = navItems;
+
+    setupRealtimeListeners();
+    showPage('dashboard');
+
+    // Setup event listeners once
+    document.getElementById('login-form').addEventListener('submit', handleLogin);
+    document.getElementById('add-teacher-form').addEventListener('submit', addTeacher);
+    document.getElementById('add-group-form').addEventListener('submit', addGroup);
+    document.getElementById('add-student-form').addEventListener('submit', addStudent);
+    document.getElementById('search-student').addEventListener('keyup', (e) => renderStudentsTable(e.target.value));
+    document.getElementById('barcode-input').addEventListener('change', handleAttendance);
+    document.getElementById('add-payment-form').addEventListener('submit', addPayment);
+    document.getElementById('add-exam-form').addEventListener('submit', startGradesEntry);
+    document.getElementById('save-grades-btn').addEventListener('click', saveGrades);
+    document.getElementById('attendance-date-filter').addEventListener('change', () => {
+        db.collection('attendance').orderBy('timestamp', 'desc').get().then(snapshot => renderAttendanceLog(snapshot.docs.map(d=>({id: d.id, ...d.data()}))));
+    });
+    document.getElementById('view-exam-group-filter').addEventListener('change', populateExamFilter);
+    document.getElementById('view-exam-filter').addEventListener('change', renderExamResults);
+}
+
+function printReceipt() {
+    const receiptContent = document.getElementById('receipt-modal-content').innerHTML;
+    const printWindow = window.open('', '', 'height=600,width=800');
+    printWindow.document.write('<html><head><title>طباعة إيصال</title>');
+    printWindow.document.write('<style>body { text-align: center; font-family: "Courier New", monospace; }</style>');
+    printWindow.document.write('</head><body>');
+    printWindow.document.write(receiptContent);
+    printWindow.document.write('</body></html>');
+    printWindow.document.close();
+    printWindow.print();
+}
+</script>
+
+</body>
+</html>
