@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>نظام إدارة المركز التعليمي (سحابى)</title>
+    <title>نظام إدارة المركز التعليمي (Google Sheets)</title>
     
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.rtl.min.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
@@ -16,36 +16,19 @@
         @import url('https://fonts.googleapis.com/css2?family=Tajawal:wght@400;700&display=swap');
         
         #login-screen, #loader-screen { 
-            position: fixed; 
-            top: 0; 
-            left: 0; 
-            width: 100%; 
-            height: 100%; 
-            background-color: #343a40; 
-            display: flex; 
-            justify-content: center; 
-            align-items: center; 
-            z-index: 9999; 
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
+            background-color: #343a40; display: flex; justify-content: center; align-items: center; z-index: 9999; 
         }
         #login-box { 
-            background: white; 
-            padding: 2rem; 
-            border-radius: 0.5rem; 
-            width: 100%; 
-            max-width: 400px; 
-            box-shadow: 0 0 15px rgba(0,0,0,0.2); 
+            background: white; padding: 2rem; border-radius: 0.5rem; width: 100%; max-width: 400px; box-shadow: 0 0 15px rgba(0,0,0,0.2); 
         }
         #app-wrapper { display: none; }
         .main-content .page { display: none; }
         .main-content .page.active { display: block; }
         
         .sidebar { 
-            height: calc(100vh - 56px);
-            position: sticky; 
-            top: 56px;
-            background-color: #343a40; 
-            color: white; 
-            overflow-y: auto; 
+            height: calc(100vh - 56px); position: sticky; top: 56px;
+            background-color: #343a40; color: white; overflow-y: auto; 
         }
         .sidebar .nav-link { 
             color: #adb5bd; cursor: pointer; border-radius: 0.25rem; margin-bottom: 0.25rem; display: flex; align-items: center;
@@ -68,27 +51,23 @@
 <body>
 
 <!-- Loader Screen -->
-<div id="loader-screen">
+<div id="loader-screen" style="display: none;">
     <div class="spinner-border text-light" role="status">
         <span class="visually-hidden">جار التحميل...</span>
     </div>
 </div>
 
 <!-- Login Screen -->
-<div id="login-screen" style="display: none;">
+<div id="login-screen">
     <div id="login-box" class="text-center">
         <h3 class="mb-4">تسجيل الدخول</h3>
         <form id="login-form">
-            <div class="form-floating mb-3">
-                <input type="email" class="form-control" id="email" placeholder="name@example.com" required>
-                <label for="email">البريد الإلكتروني</label>
-            </div>
             <div class="form-floating mb-3">
                 <input type="password" class="form-control" id="password" placeholder="Password" required>
                 <label for="password">كلمة المرور</label>
             </div>
             <button type="submit" class="btn btn-primary w-100">دخول</button>
-            <div id="login-error" class="text-danger mt-2" style="display: none;">البريد الإلكتروني أو كلمة المرور غير صحيحة.</div>
+            <div id="login-error" class="text-danger mt-2" style="display: none;">كلمة المرور غير صحيحة.</div>
         </form>
     </div>
 </div>
@@ -109,9 +88,7 @@
             <button type="button" class="btn-close btn-close-white" data-bs-dismiss="offcanvas" aria-label="Close"></button>
         </div>
         <div class="offcanvas-body">
-            <ul class="nav flex-column" id="mobile-nav-links">
-                <!-- Links will be dynamically inserted here -->
-            </ul>
+            <ul class="nav flex-column" id="mobile-nav-links"></ul>
         </div>
     </div>
 
@@ -119,14 +96,12 @@
         <div class="row">
             <!-- Desktop Sidebar -->
             <nav id="sidebar" class="col-md-3 col-lg-2 d-none d-md-block sidebar p-3">
-                <ul class="nav flex-column" id="desktop-nav-links">
-                    <!-- Links will be dynamically inserted here -->
-                </ul>
+                <ul class="nav flex-column" id="desktop-nav-links"></ul>
             </nav>
 
             <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4 pt-4 main-content">
-                <!-- All pages are the same as before -->
-                 <div id="dashboard" class="page active">
+                <!-- Pages are identical to the previous version -->
+                <div id="dashboard" class="page active">
                     <h3>لوحة التحكم</h3>
                     <div class="row mt-4">
                         <div class="col-lg-3 col-md-6 mb-4"><div class="card stat-card bg-primary p-3"><div class="d-flex justify-content-between align-items-center"><div><h5>الطلاب</h5><h2 id="total-students-stat">0</h2></div><div class="card-icon">🧑‍🎓</div></div></div></div>
@@ -249,83 +224,80 @@
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 
-<!-- Firebase SDK -->
-<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
-<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
-<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
-
 <script>
 // ===================================================================================
-// ===== هام جداً: إعدادات FIREBASE =====
+// ===== إعدادات SHEET.BEST - هام جداً =====
 // ===================================================================================
-// 1. اذهب إلى https://console.firebase.google.com
-// 2. أنشئ مشروعاً جديداً (Project).
-// 3. في صفحة المشروع، اضغط على أيقونة الويب (</>) لإنشاء تطبيق ويب جديد.
-// 4. أعط التطبيق اسماً (مثلاً: "نظام المركز") ثم اضغط "Register app".
-// 5. ستظهر لك شفرة تحتوي على `firebaseConfig`. انسخ هذا الكائن (object) والصقه هنا بالأسفل.
-// 6. اذهب إلى قسم "Authentication" في قائمة مشروعك، اختر "Sign-in method"، وقم بتفعيل "Email/Password".
-// 7. اذهب إلى قسم "Firestore Database"، اضغط "Create database"، اختر "Start in test mode" (للبدء السريع)، واختر الموقع الجغرافي.
-//
-// For Firebase JS SDK v7.20.0 and later, measurementId is optional
-const firebaseConfig = {
-  apiKey: "AIzaSyCGhbk9D_iGaqiSMVirdjMha7kVM03km9I",
-  authDomain: "educational-center-sys.firebaseapp.com",
-  projectId: "educational-center-sys",
-  storageBucket: "educational-center-sys.firebasestorage.app",
-  messagingSenderId: "223720761047",
-  appId: "1:223720761047:web:5c4014e231d25c847ef292",
-  measurementId: "G-J992M6RNRV"
-};
+// 1. اتبع دليل الإعداد الذي تم تزويدك به لإنشاء جدول بيانات جوجل وربطه بـ Sheet.best.
+// 2. الصق رابط الاتصال (Connection URL) الذي حصلت عليه من موقع Sheet.best هنا.
+const SHEET_BEST_URL = "https://api.sheetbest.com/sheets/ddd07e86-51fb-4c28-8ed8-550e887ade83";
 
-// Initialize Firebase
-firebase.initializeApp(firebaseConfig);
-const auth = firebase.auth();
-const db = firebase.firestore();
+// كلمة المرور للدخول إلى النظام
+const APP_PASSWORD = '123456789'; // يمكنك تغييرها
 // ===================================================================================
 
+// ** FIX: Add a check for the placeholder URL **
+if (SHEET_BEST_URL.includes("الصق هنا")) {
+    alert("خطأ في الإعداد: يرجى لصق رابط الاتصال (Connection URL) الخاص بك من موقع Sheet.best في متغير SHEET_BEST_URL داخل الكود.");
+    throw new Error("Sheet.best URL is not configured.");
+}
+
+
+// Global state
 let currentStudentDetailsId = null;
 let allStudents = [];
 let allGroups = [];
 let allTeachers = [];
 let allExams = [];
+let allAttendance = [];
+let allPayments = [];
+
+// ===== API HELPER =====
+async function sheetBestFetch(tabName, options = {}) {
+    const url = `${SHEET_BEST_URL}/tabs/${tabName}`;
+    try {
+        const response = await fetch(url, options);
+        if (!response.ok) {
+            const errorData = await response.json();
+            console.error(`Sheet.best Error (${response.status}):`, errorData);
+            throw new Error('فشل الاتصال بـ Sheet.best.');
+        }
+        return await response.json();
+    } catch (error) {
+        console.error('Fetch Error:', error);
+        alert('حدث خطأ في الشبكة. يرجى التحقق من اتصالك بالإنترنت ورابط Sheet.best.');
+        // ** FIX: Return an empty array on failure to prevent crashes **
+        return []; 
+    }
+}
 
 // ===== AUTH LOGIC =====
-auth.onAuthStateChanged(user => {
-    const loader = document.getElementById('loader-screen');
-    const loginScreen = document.getElementById('login-screen');
-    const appWrapper = document.getElementById('app-wrapper');
-
-    if (user) {
-        // User is signed in.
-        loader.style.display = 'none';
-        loginScreen.style.display = 'none';
-        appWrapper.style.display = 'block';
-        initializeApp();
-    } else {
-        // User is signed out.
-        loader.style.display = 'none';
-        loginScreen.style.display = 'flex';
-        appWrapper.style.display = 'none';
-    }
-});
-
 function handleLogin(e) {
     e.preventDefault();
-    const email = document.getElementById('email').value;
     const password = document.getElementById('password').value;
-    const loginError = document.getElementById('login-error');
-
-    auth.signInWithEmailAndPassword(email, password)
-        .catch(error => {
-            console.error("Login Error:", error);
-            loginError.style.display = 'block';
-        });
+    if (password === APP_PASSWORD) {
+        sessionStorage.setItem('isLoggedIn', 'true');
+        checkLogin();
+    } else {
+        document.getElementById('login-error').style.display = 'block';
+    }
 }
 
 function logout() {
-    auth.signOut();
+    sessionStorage.removeItem('isLoggedIn');
+    location.reload();
 }
 
+function checkLogin() {
+    if (sessionStorage.getItem('isLoggedIn') === 'true') {
+        document.getElementById('login-screen').style.display = 'none';
+        document.getElementById('app-wrapper').style.display = 'block';
+        initializeApp();
+    } else {
+        document.getElementById('login-screen').style.display = 'flex';
+        document.getElementById('app-wrapper').style.display = 'none';
+    }
+}
 
 // ===== UI LOGIC =====
 function showPage(pageId, studentId = null) {
@@ -344,67 +316,68 @@ function showPage(pageId, studentId = null) {
     });
 
     if (pageId === 'student-details') renderStudentDetails();
-    if (pageId === 'grades') { populateGroupsDropdown('exam-group'); populateGroupsDropdown('view-exam-group-filter'); }
-    if (pageId === 'students') { populateGroupsDropdown('student-group'); }
-    if (pageId === 'groups') { populateTeachersDropdown(); }
 }
 
-// ===== REAL-TIME DATA LISTENERS =====
-function setupRealtimeListeners() {
-    db.collection('teachers').onSnapshot(snapshot => {
-        allTeachers = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-        renderTeachersTable();
-        renderTeacherFinances();
-        populateTeachersDropdown();
-    });
-
-    db.collection('groups').onSnapshot(snapshot => {
-        allGroups = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-        renderGroupsTable();
-        populateGroupsDropdown('student-group');
-        populateGroupsDropdown('exam-group');
-        populateGroupsDropdown('view-exam-group-filter');
-    });
-
-    db.collection('students').onSnapshot(snapshot => {
-        allStudents = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-        renderStudentsTable();
-        renderDashboard();
-    });
+// ===== DATA LOADING =====
+async function loadAllData() {
+    document.getElementById('loader-screen').style.display = 'flex';
     
-    db.collection('payments').onSnapshot(snapshot => {
-        const payments = snapshot.docs.map(doc => doc.data());
-        renderDashboard(payments);
-        renderTeacherFinances();
-    });
+    // ** FIX: Wrap data loading in a try...catch block to handle promise rejections **
+    try {
+        const [teachersRes, groupsRes, studentsRes, attendanceRes, paymentsRes, examsRes] = await Promise.all([
+            sheetBestFetch('Teachers'),
+            sheetBestFetch('Groups'),
+            sheetBestFetch('Students'),
+            sheetBestFetch('Attendance'),
+            sheetBestFetch('Payments'),
+            sheetBestFetch('Exams')
+        ]);
 
-    db.collection('attendance').orderBy('timestamp', 'desc').onSnapshot(snapshot => {
-        const attendance = snapshot.docs.map(doc => ({id: doc.id, ...doc.data()}));
-        renderAttendanceLog(attendance);
-    });
+        allTeachers = teachersRes;
+        allGroups = groupsRes;
+        allStudents = studentsRes;
+        // ** FIX: Ensure attendanceRes is an array before sorting **
+        allAttendance = (attendanceRes || []).sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+        allPayments = paymentsRes;
+        allExams = (examsRes || []).map(exam => ({ ...exam, grades: JSON.parse(exam.grades || '[]') }));
 
-    db.collection('exams').onSnapshot(snapshot => {
-        allExams = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-        populateExamFilter();
-    });
+        renderAll();
+    } catch (error) {
+        console.error("Failed to load data from Sheet.best:", error);
+        alert("فشل تحميل البيانات. يرجى التأكد من صحة رابط Sheet.best وتنسيق الأعمدة في جدول البيانات.");
+    } finally {
+        document.getElementById('loader-screen').style.display = 'none';
+    }
+}
+
+function renderAll() {
+    renderDashboard();
+    renderTeachersTable();
+    renderGroupsTable();
+    renderStudentsTable();
+    renderAttendanceLog();
+    renderTeacherFinances();
+    populateTeachersDropdown();
+    populateGroupsDropdown('student-group');
+    populateGroupsDropdown('exam-group');
+    populateGroupsDropdown('view-exam-group-filter');
+    populateExamFilter();
 }
 
 
-// ===== RENDER FUNCTIONS (Now use local arrays updated by listeners) =====
-function renderDashboard(payments = null) {
+// ===== RENDER FUNCTIONS =====
+function renderDashboard() {
     document.getElementById('total-students-stat').innerText = allStudents.length;
     document.getElementById('total-teachers-stat').innerText = allTeachers.length;
     document.getElementById('total-groups-stat').innerText = allGroups.length;
-    if (payments) {
-        const totalRevenue = payments.reduce((sum, p) => sum + p.amount, 0);
-        document.getElementById('total-revenue-stat').innerText = `${totalRevenue} ج`;
-    }
+    const totalRevenue = allPayments.reduce((sum, p) => sum + parseFloat(p.amount || 0), 0);
+    document.getElementById('total-revenue-stat').innerText = `${totalRevenue} ج`;
 }
 
 function renderTeachersTable() {
     const tableBody = document.getElementById('teachers-table-body');
     tableBody.innerHTML = '';
-    allTeachers.forEach(t => { tableBody.innerHTML += `<tr><td>${t.name}</td><td>${t.subject}</td><td>${t.percentage}%</td><td><button class="btn btn-danger btn-sm" onclick="deleteData('teachers', '${t.id}')">حذف</button></td></tr>`; });
+    allTeachers.forEach(t => { tableBody.innerHTML += `<tr><td>${t.name}</td><td>${t.subject}</td><td>${t.percentage}%</td><td><button class="btn btn-danger btn-sm" onclick="deleteData('Teachers', '${t.id}')">حذف</button></td></tr>`; });
 }
 
 function populateTeachersDropdown() {
@@ -417,7 +390,7 @@ function renderGroupsTable() {
     const tableBody = document.getElementById('groups-table-body');
     tableBody.innerHTML = '';
     allGroups.forEach(g => {
-        tableBody.innerHTML += `<tr><td>${g.name}</td><td>${g.teacherName || 'غير محدد'}</td><td>${g.schedule}</td><td><button class="btn btn-danger btn-sm" onclick="deleteData('groups', '${g.id}')">حذف</button></td></tr>`;
+        tableBody.innerHTML += `<tr><td>${g.name}</td><td>${g.teacherName || 'غير محدد'}</td><td>${g.schedule}</td><td><button class="btn btn-danger btn-sm" onclick="deleteData('Groups', '${g.id}')">حذف</button></td></tr>`;
     });
 }
 
@@ -432,7 +405,7 @@ function populateGroupsDropdown(selectId) {
 function renderStudentsTable(filter = '') {
     const tableBody = document.getElementById('students-table-body');
     tableBody.innerHTML = '';
-    const filteredStudents = allStudents.filter(s => s.name.toLowerCase().includes(filter.toLowerCase()) || s.barcode.toLowerCase().includes(filter.toLowerCase()));
+    const filteredStudents = allStudents.filter(s => s.name.toLowerCase().includes(filter.toLowerCase()) || (s.barcode && s.barcode.toLowerCase().includes(filter.toLowerCase())));
     filteredStudents.forEach(s => {
         const group = allGroups.find(g => g.id === s.groupId);
         tableBody.innerHTML += `<tr>
@@ -442,43 +415,40 @@ function renderStudentsTable(filter = '') {
             <td>${s.stage}</td>
             <td>
                 <button class="btn btn-info btn-sm" onclick="showPage('student-details', '${s.id}')">التفاصيل</button>
-                <button class="btn btn-danger btn-sm" onclick="deleteData('students', '${s.id}')">حذف</button>
+                <button class="btn btn-danger btn-sm" onclick="deleteData('Students', '${s.id}')">حذف</button>
             </td>
         </tr>`;
     });
 }
 
 function renderTeacherFinances() {
-     db.collection('payments').get().then(paymentSnapshot => {
-        const payments = paymentSnapshot.docs.map(doc => doc.data());
-        const tableBody = document.getElementById('teacher-finances-table-body');
-        tableBody.innerHTML = '';
-        allTeachers.forEach(teacher => {
-            const teacherGroups = allGroups.filter(g => g.teacherName === teacher.name);
-            const teacherGroupIds = teacherGroups.map(g => g.id);
-            const teacherStudentIds = allStudents.filter(s => teacherGroupIds.includes(s.groupId)).map(s => s.id);
-            const totalRevenue = payments.filter(p => teacherStudentIds.includes(p.studentId)).reduce((sum, p) => sum + p.amount, 0);
-            const teacherShare = totalRevenue * (teacher.percentage / 100);
-            tableBody.innerHTML += `<tr><td>${teacher.name}</td><td>${totalRevenue.toFixed(2)} ج</td><td>${teacher.percentage}%</td><td>${teacherShare.toFixed(2)} ج</td></tr>`;
-        });
+    const tableBody = document.getElementById('teacher-finances-table-body');
+    tableBody.innerHTML = '';
+    allTeachers.forEach(teacher => {
+        const teacherGroups = allGroups.filter(g => g.teacherName === teacher.name);
+        const teacherGroupIds = teacherGroups.map(g => g.id);
+        const teacherStudentIds = allStudents.filter(s => teacherGroupIds.includes(s.groupId)).map(s => s.id);
+        const totalRevenue = allPayments.filter(p => teacherStudentIds.includes(p.studentId)).reduce((sum, p) => sum + parseFloat(p.amount || 0), 0);
+        const teacherShare = totalRevenue * (parseFloat(teacher.percentage || 0) / 100);
+        tableBody.innerHTML += `<tr><td>${teacher.name}</td><td>${totalRevenue.toFixed(2)} ج</td><td>${teacher.percentage || 0}%</td><td>${teacherShare.toFixed(2)} ج</td></tr>`;
     });
 }
 
-function renderAttendanceLog(attendanceData) {
+function renderAttendanceLog() {
     const dateFilter = document.getElementById('attendance-date-filter').value;
     const tableBody = document.getElementById('attendance-log-body');
     tableBody.innerHTML = '';
 
-    let filteredData = attendanceData;
+    let filteredData = allAttendance;
     if (dateFilter) {
-        filteredData = attendanceData.filter(att => att.timestamp.toDate().toISOString().startsWith(dateFilter));
+        filteredData = allAttendance.filter(att => att.timestamp && att.timestamp.startsWith(dateFilter));
     }
 
     filteredData.forEach(att => {
         const student = allStudents.find(s => s.id === att.studentId);
         if (student) {
             const group = allGroups.find(g => g.id === student.groupId);
-            const aDate = att.timestamp.toDate();
+            const aDate = new Date(att.timestamp);
             tableBody.innerHTML += `<tr>
                 <td>${student.name}</td>
                 <td>${group ? group.name : 'غير محدد'}</td>
@@ -530,13 +500,11 @@ function renderStudentDetails() {
 
     document.getElementById('student-details-name').innerText = `تفاصيل الطالب: ${student.name}`;
     
-    db.collection('attendance').where('studentId', '==', student.id).orderBy('timestamp', 'desc').get().then(snapshot => {
-        const attendanceBody = document.getElementById('student-attendance-body');
-        attendanceBody.innerHTML = '';
-        snapshot.forEach(doc => {
-            const aDate = doc.data().timestamp.toDate();
-            attendanceBody.innerHTML += `<tr><td>${aDate.toLocaleDateString('ar-EG')}</td><td>${aDate.toLocaleTimeString('ar-EG')}</td></tr>`;
-        });
+    const attendanceBody = document.getElementById('student-attendance-body');
+    attendanceBody.innerHTML = '';
+    allAttendance.filter(att => att.studentId === student.id).forEach(att => {
+        const aDate = new Date(att.timestamp);
+        attendanceBody.innerHTML += `<tr><td>${aDate.toLocaleDateString('ar-EG')}</td><td>${aDate.toLocaleTimeString('ar-EG')}</td></tr>`;
     });
 
     const gradesBody = document.getElementById('student-grades-body');
@@ -549,35 +517,57 @@ function renderStudentDetails() {
     });
 }
 
-// ===== DATA HANDLING LOGIC (Now uses Firestore) =====
+// ===== DATA HANDLING LOGIC =====
+async function addData(tabName, data) {
+    await sheetBestFetch(tabName, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+    });
+    loadAllData(); // Reload all data to reflect changes
+}
+
+async function deleteData(tabName, recordId) {
+    if (confirm(`هل أنت متأكد من الحذف؟`)) {
+        await sheetBestFetch(`${tabName}/id/${recordId}`, { method: 'DELETE' });
+        loadAllData(); // Reload all data
+    }
+}
+
 function addTeacher(e) {
     e.preventDefault();
-    db.collection('teachers').add({
+    const data = {
+        id: `TCH-${Date.now()}`,
         name: document.getElementById('teacher-name').value,
         subject: document.getElementById('teacher-subject').value,
-        percentage: parseInt(document.getElementById('teacher-percentage').value)
-    }).then(() => e.target.reset());
+        percentage: document.getElementById('teacher-percentage').value
+    };
+    addData('Teachers', data).then(() => e.target.reset());
 }
 
 function addGroup(e) {
     e.preventDefault();
-    db.collection('groups').add({
+    const data = {
+        id: `GRP-${Date.now()}`,
         name: document.getElementById('group-name').value,
         teacherName: document.getElementById('group-teacher').value,
         schedule: document.getElementById('group-schedule').value
-    }).then(() => e.target.reset());
+    };
+    addData('Groups', data).then(() => e.target.reset());
 }
 
 function addStudent(e) {
     e.preventDefault();
     const studentBarcode = `STU-${Date.now()}`;
-    db.collection('students').add({
+    const data = {
+        id: `STU-ID-${Date.now()}`,
         name: document.getElementById('name').value,
         stage: document.getElementById('stage').value,
         parentPhone: document.getElementById('parentPhone').value,
         groupId: document.getElementById('student-group').value,
         barcode: studentBarcode
-    }).then(() => {
+    };
+    addData('Students', data).then(() => {
         alert(`تمت إضافة الطالب بنجاح! كود الطالب (للباركود) هو: ${studentBarcode}`);
         e.target.reset();
     });
@@ -589,14 +579,15 @@ function addPayment(e) {
     const student = allStudents.find(s => s.barcode === studentBarcode);
     if (!student) { alert('خطأ: كود الطالب غير موجود.'); return; }
     
-    const newPayment = { 
+    const data = { 
+        id: `PAY-${Date.now()}`,
         studentId: student.id, 
-        amount: parseFloat(document.getElementById('payment-amount').value), 
-        date: new Date()
+        amount: document.getElementById('payment-amount').value, 
+        date: new Date().toISOString()
     };
     
-    db.collection('payments').add(newPayment).then(() => {
-        document.getElementById('receipt-modal-content').innerHTML = `<h5>المركز التعليمي</h5><p>-------------------------</p><p><strong>الطالب:</strong> ${student.name}</p><p><strong>المبلغ:</strong> ${newPayment.amount.toFixed(2)} ج</p><p>-------------------------</p><p>شكرًا لكم!</p>`;
+    addData('Payments', data).then(() => {
+        document.getElementById('receipt-modal-content').innerHTML = `<h5>المركز التعليمي</h5><p>-------------------------</p><p><strong>الطالب:</strong> ${student.name}</p><p><strong>المبلغ:</strong> ${parseFloat(data.amount).toFixed(2)} ج</p><p>-------------------------</p><p>شكرًا لكم!</p>`;
         new bootstrap.Modal(document.getElementById('receiptModal')).show();
         e.target.reset();
     });
@@ -608,10 +599,12 @@ function handleAttendance(e) {
     const student = allStudents.find(s => s.barcode === barcode);
     const feedbackEl = document.getElementById('attendance-feedback');
     if (student) {
-        db.collection('attendance').add({
+        const data = {
+            id: `ATT-${Date.now()}`,
             studentId: student.id,
-            timestamp: new Date()
-        });
+            timestamp: new Date().toISOString()
+        };
+        addData('Attendance', data);
         feedbackEl.innerHTML = `<div class="alert alert-success"><strong>حضور:</strong> ${student.name}<br><strong>الوقت:</strong> ${new Date().toLocaleTimeString()}</div>`;
     } else {
         feedbackEl.innerHTML = `<div class="alert alert-danger"><strong>خطأ:</strong> الطالب غير مسجل.</div>`;
@@ -622,7 +615,6 @@ function handleAttendance(e) {
 function startGradesEntry(e) {
     e.preventDefault();
     const groupId = document.getElementById('exam-group').value;
-    const examName = document.getElementById('exam-name').value;
     if (!groupId) { alert('يرجى اختيار مجموعة أولاً.'); return; }
 
     const studentsInGroup = allStudents.filter(s => s.groupId === groupId);
@@ -633,46 +625,39 @@ function startGradesEntry(e) {
         tableBody.innerHTML += `<tr><td>${student.name}</td><td><input type="number" class="form-control grade-input" data-student-id="${student.id}" placeholder="ادخل الدرجة"></td></tr>`;
     });
     
+    const examName = document.getElementById('exam-name').value;
     document.getElementById('grades-entry-title').innerText = `رصد درجات امتحان "${examName}"`;
     document.getElementById('grades-entry-card').style.display = 'block';
 }
 
 function saveGrades() {
-    const examName = document.getElementById('exam-name').value;
-    const groupId = document.getElementById('exam-group').value;
     const gradeInputs = document.querySelectorAll('.grade-input');
-    
-    const newExam = {
-        name: examName,
-        groupId: groupId,
-        grades: []
-    };
-
+    const grades = [];
     gradeInputs.forEach(input => {
         if (input.value) {
-            newExam.grades.push({
+            grades.push({
                 studentId: input.dataset.studentId,
                 grade: parseFloat(input.value)
             });
         }
     });
 
-    db.collection('exams').add(newExam).then(() => {
+    const data = {
+        id: `EXM-${Date.now()}`,
+        name: document.getElementById('exam-name').value,
+        groupId: document.getElementById('exam-group').value,
+        grades: JSON.stringify(grades) // Store grades as a JSON string
+    };
+
+    addData('Exams', data).then(() => {
         alert('تم حفظ الدرجات بنجاح!');
         document.getElementById('grades-entry-card').style.display = 'none';
         document.getElementById('add-exam-form').reset();
     });
 }
 
-function deleteData(collectionName, id) {
-    if (confirm(`هل أنت متأكد من الحذف؟ سيتم حذف كل البيانات المرتبطة.`)) {
-        db.collection(collectionName).doc(id).delete().catch(error => console.error("Error removing document: ", error));
-    }
-}
-
 // ===== APP INITIALIZATION =====
 function initializeApp() {
-    // Generate nav links
     const navItems = `
         <li class="nav-item"><a class="nav-link active" onclick="showPage('dashboard')" data-bs-dismiss="offcanvas"><i class="bi bi-grid-1x2-fill"></i> لوحة التحكم</a></li>
         <li class="nav-item"><a class="nav-link" onclick="showPage('teachers')" data-bs-dismiss="offcanvas"><i class="bi bi-person-video3"></i> المدرسون</a></li>
@@ -686,11 +671,10 @@ function initializeApp() {
     document.getElementById('desktop-nav-links').innerHTML = navItems;
     document.getElementById('mobile-nav-links').innerHTML = navItems;
 
-    setupRealtimeListeners();
+    loadAllData();
     showPage('dashboard');
 
     // Setup event listeners once
-    document.getElementById('login-form').addEventListener('submit', handleLogin);
     document.getElementById('add-teacher-form').addEventListener('submit', addTeacher);
     document.getElementById('add-group-form').addEventListener('submit', addGroup);
     document.getElementById('add-student-form').addEventListener('submit', addStudent);
@@ -699,9 +683,7 @@ function initializeApp() {
     document.getElementById('add-payment-form').addEventListener('submit', addPayment);
     document.getElementById('add-exam-form').addEventListener('submit', startGradesEntry);
     document.getElementById('save-grades-btn').addEventListener('click', saveGrades);
-    document.getElementById('attendance-date-filter').addEventListener('change', () => {
-        db.collection('attendance').orderBy('timestamp', 'desc').get().then(snapshot => renderAttendanceLog(snapshot.docs.map(d=>({id: d.id, ...d.data()}))));
-    });
+    document.getElementById('attendance-date-filter').addEventListener('change', renderAttendanceLog);
     document.getElementById('view-exam-group-filter').addEventListener('change', populateExamFilter);
     document.getElementById('view-exam-filter').addEventListener('change', renderExamResults);
 }
@@ -717,6 +699,12 @@ function printReceipt() {
     printWindow.document.close();
     printWindow.print();
 }
+
+// Initial check
+document.addEventListener('DOMContentLoaded', () => {
+    document.getElementById('login-form').addEventListener('submit', handleLogin);
+    checkLogin();
+});
 </script>
 
 </body>
