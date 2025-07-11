@@ -3,17 +3,17 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>نظام إدارة المركز التعليمي (SheetDB)</title>
+    <title>نظام إدارة المركز التعليمي (Google Apps Script)</title>
     
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.rtl.min.css">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <link rel="stylesheet" href="[https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.rtl.min.css](https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.rtl.min.css)">
+    <link rel="stylesheet" href="[https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css](https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css)">
     
     <style>
         body { 
             background-color: #f8f9fa; 
             font-family: 'Tajawal', sans-serif; 
         }
-        @import url('https://fonts.googleapis.com/css2?family=Tajawal:wght@400;700&display=swap');
+        @import url('[https://fonts.googleapis.com/css2?family=Tajawal:wght@400;700&display=swap](https://fonts.googleapis.com/css2?family=Tajawal:wght@400;700&display=swap)');
         
         #login-screen, #loader-screen { 
             position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
@@ -50,12 +50,14 @@
 </head>
 <body>
 
+<!-- Loader Screen -->
 <div id="loader-screen" style="display: none;">
     <div class="spinner-border text-light" role="status">
         <span class="visually-hidden">جار التحميل...</span>
     </div>
 </div>
 
+<!-- Login Screen -->
 <div id="login-screen">
     <div id="login-box" class="text-center">
         <h3 class="mb-4">تسجيل الدخول</h3>
@@ -71,6 +73,7 @@
 </div>
 
 <div id="app-wrapper">
+    <!-- Top Navbar -->
     <nav class="navbar navbar-dark bg-dark sticky-top flex-md-nowrap p-0 shadow">
         <a class="navbar-brand col-md-3 col-lg-2 me-0 px-3" href="#">إدارة المركز</a>
         <button class="navbar-toggler position-absolute d-md-none collapsed" type="button" data-bs-toggle="offcanvas" data-bs-target="#mobile-sidebar" aria-controls="mobile-sidebar">
@@ -78,6 +81,7 @@
         </button>
     </nav>
 
+    <!-- Mobile Sidebar (Offcanvas) -->
     <div class="offcanvas offcanvas-start bg-dark text-white" tabindex="-1" id="mobile-sidebar" aria-labelledby="mobile-sidebar-label">
         <div class="offcanvas-header">
             <h5 class="offcanvas-title" id="mobile-sidebar-label">القائمة</h5>
@@ -90,11 +94,13 @@
 
     <div class="container-fluid">
         <div class="row">
+            <!-- Desktop Sidebar -->
             <nav id="sidebar" class="col-md-3 col-lg-2 d-none d-md-block sidebar p-3">
                 <ul class="nav flex-column" id="desktop-nav-links"></ul>
             </nav>
 
             <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4 pt-4 main-content">
+                <!-- Pages are identical to the previous version -->
                 <div id="dashboard" class="page active">
                     <h3>لوحة التحكم</h3>
                     <div class="row mt-4">
@@ -119,7 +125,16 @@
 
                 <div id="students" class="page">
                     <h3>إدارة الطلاب</h3>
-                    <div class="card p-3 mb-4"><form id="add-student-form" class="row g-3 align-items-end"><div class="col-md-3"><label class="form-label">اسم الطالب</label><input type="text" id="name" class="form-control" required></div><div class="col-md-3"><label class="form-label">المرحلة</label><input type="text" id="stage" class="form-control" required></div><div class="col-md-3"><label class="form-label">هاتف ولي الأمر</label><input type="tel" id="parentPhone" class="form-control" required></div><div class="col-md-2"><label class="form-label">المجموعة</label><select id="student-group" class="form-select" required></select></div><div class="col-md-1"><button type="submit" class="btn btn-primary w-100">إضافة</button></div></form></div>
+                    <div class="card p-3 mb-4">
+                        <form id="add-student-form" class="row g-3 align-items-end">
+                            <div class="col-md-3"><label class="form-label">اسم الطالب</label><input type="text" id="name" class="form-control" required></div>
+                            <div class="col-md-2"><label class="form-label">كود الطالب (5 أرقام)</label><input type="text" id="student-code" class="form-control" placeholder="اتركه فارغاً للتلقائي"></div>
+                            <div class="col-md-2"><label class="form-label">المرحلة</label><input type="text" id="stage" class="form-control" required></div>
+                            <div class="col-md-2"><label class="form-label">هاتف ولي الأمر</label><input type="tel" id="parentPhone" class="form-control" required></div>
+                            <div class="col-md-2"><label class="form-label">المجموعة</label><select id="student-group" class="form-select" required></select></div>
+                            <div class="col-md-1"><button type="submit" class="btn btn-primary w-100">إضافة</button></div>
+                        </form>
+                    </div>
                     <div class="card p-3"><h5 class="card-title">قائمة الطلاب</h5><input type="text" id="search-student" class="form-control mb-3" placeholder="ابحث بالاسم أو الكود..."><div class="table-responsive"><table class="table table-striped"><thead><tr><th>الاسم</th><th>الكود</th><th>المجموعة</th><th>المرحلة</th><th>إجراءات</th></tr></thead><tbody id="students-table-body"></tbody></table></div></div>
                 </div>
 
@@ -216,26 +231,24 @@
 
 <div class="modal fade" id="receiptModal" tabindex="-1"><div class="modal-dialog"><div class="modal-content"><div class="modal-header"><h5 class="modal-title">إيصال استلام</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div><div class="modal-body" id="receipt-modal-content"></div><div class="modal-footer"><button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إغلاق</button><button type="button" class="btn btn-primary" onclick="printReceipt()">طباعة</button></div></div></div></div>
 
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script src="[https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js](https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js)"></script>
 
 <script>
 // ===================================================================================
-// ===== إعدادات SHEETDB.IO - هام جداً =====
+// ===== إعدادات Google Apps Script - هام جداً =====
 // ===================================================================================
-// 1. اتبع دليل الإعداد الذي تم تزويدك به لإنشاء جدول بيانات جوجل وربطه بـ SheetDB.
-// 2. الصق رابط واجهة برمجة التطبيقات (API Endpoint) الذي حصلت عليه من موقع SheetDB هنا.
-const SHEETDB_URL = "https://sheetdb.io/api/v1/ahg3k8j1ewx6j";
+// 1. اتبع دليل الإعداد الذي تم تزويدك به لنشر الكود كـ "Web App".
+// 2. الصق رابط تطبيق الويب (Web app URL) الذي حصلت عليه هنا.
+const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwf3RPrAEtcrhpY3xy4c2EuCUr3Xbm9XgLAgd6xbXINusAm6Q_uSAYaClsNqYP6p_fTUw/exec";
 
 // كلمة المرور للدخول إلى النظام
 const APP_PASSWORD = '123456789'; // يمكنك تغييرها
 // ===================================================================================
 
-// ** FIX: Add a check for the placeholder URL **
-if (SHEETDB_URL.includes("الصق هنا")) {
-    alert("خطأ في الإعداد: يرجى لصق رابط API الخاص بك من موقع SheetDB في متغير SHEETDB_URL داخل الكود.");
-    throw new Error("SheetDB URL is not configured.");
+if (GOOGLE_SCRIPT_URL.includes("الصق هنا")) {
+    alert("خطأ في الإعداد: يرجى لصق رابط تطبيق الويب (Web app URL) الخاص بك من Google Apps Script في متغير GOOGLE_SCRIPT_URL داخل الكود.");
+    throw new Error("Google Apps Script URL is not configured.");
 }
-
 
 // Global state
 let currentStudentDetailsId = null;
@@ -247,24 +260,24 @@ let allAttendance = [];
 let allPayments = [];
 
 // ===== API HELPER =====
-async function sheetDbFetch(params = '', options = {}) {
-    const url = `${SHEETDB_URL}${params}`;
+async function googleScriptFetch(options = {}) {
     try {
-        const response = await fetch(url, options);
+        const response = await fetch(GOOGLE_SCRIPT_URL, options);
         if (!response.ok) {
-            const errorData = await response.json();
-            console.error(`SheetDB Error (${response.status}):`, errorData);
-            throw new Error('فشل الاتصال بـ SheetDB.');
+            const errorText = await response.text();
+            console.error(`Google Script Error (${response.status}):`, errorText);
+            throw new Error('فشل الاتصال بـ Google Script.');
         }
-        // For DELETE requests, response might be empty
-        if (options.method === 'DELETE') {
-            return { "deleted": 1 };
+        const result = await response.json();
+        if(result.error) {
+            console.error("Error from script:", result.error);
+            throw new Error(result.error);
         }
-        return await response.json();
+        return result;
     } catch (error) {
         console.error('Fetch Error:', error);
-        alert('حدث خطأ في الشبكة. يرجى التحقق من اتصالك بالإنترنت ورابط SheetDB.');
-        return []; // Return an empty array on failure to prevent crashes
+        alert('حدث خطأ في الشبكة. يرجى التحقق من اتصالك بالإنترنت ورابط Google Apps Script.');
+        return [];
     }
 }
 
@@ -321,12 +334,12 @@ async function loadAllData() {
     
     try {
         const [teachersRes, groupsRes, studentsRes, attendanceRes, paymentsRes, examsRes] = await Promise.all([
-            sheetDbFetch('?sheet=Teachers'),
-            sheetDbFetch('?sheet=Groups'),
-            sheetDbFetch('?sheet=Students'),
-            sheetDbFetch('?sheet=Attendance'),
-            sheetDbFetch('?sheet=Payments'),
-            sheetDbFetch('?sheet=Exams')
+            googleScriptFetch({ method: 'GET', headers: { 'Accept': 'application/json' }, redirect: 'follow' }, '&sheet=Teachers'),
+            googleScriptFetch({ method: 'GET', headers: { 'Accept': 'application/json' }, redirect: 'follow' }, '&sheet=Groups'),
+            googleScriptFetch({ method: 'GET', headers: { 'Accept': 'application/json' }, redirect: 'follow' }, '&sheet=Students'),
+            googleScriptFetch({ method: 'GET', headers: { 'Accept': 'application/json' }, redirect: 'follow' }, '&sheet=Attendance'),
+            googleScriptFetch({ method: 'GET', headers: { 'Accept': 'application/json' }, redirect: 'follow' }, '&sheet=Payments'),
+            googleScriptFetch({ method: 'GET', headers: { 'Accept': 'application/json' }, redirect: 'follow' }, '&sheet=Exams')
         ]);
 
         allTeachers = teachersRes;
@@ -338,10 +351,33 @@ async function loadAllData() {
 
         renderAll();
     } catch (error) {
-        console.error("Failed to load data from SheetDB:", error);
-        alert("فشل تحميل البيانات. يرجى التأكد من صحة رابط SheetDB وتنسيق الأعمدة في جدول البيانات.");
+        console.error("Failed to load data from Google Script:", error);
+        alert("فشل تحميل البيانات. يرجى التأكد من صحة رابط Google Script وأنك قمت بنشره بشكل صحيح مع إعطاء صلاحية الوصول للجميع (Anyone).");
     } finally {
         document.getElementById('loader-screen').style.display = 'none';
+    }
+}
+
+// Overload googleScriptFetch for GET requests with parameters
+async function googleScriptFetch(options, params = '') {
+    const url = `${GOOGLE_SCRIPT_URL}${params}`;
+    try {
+        const response = await fetch(url, options);
+        if (!response.ok) {
+            const errorText = await response.text();
+            console.error(`Google Script Error (${response.status}):`, errorText);
+            throw new Error('فشل الاتصال بـ Google Script.');
+        }
+        const result = await response.json();
+        if(result.error) {
+            console.error("Error from script:", result.error);
+            throw new Error(result.error);
+        }
+        return result;
+    } catch (error) {
+        console.error('Fetch Error:', error);
+        alert('حدث خطأ في الشبكة. يرجى التحقق من اتصالك بالإنترنت ورابط Google Apps Script.');
+        return [];
     }
 }
 
@@ -514,18 +550,33 @@ function renderStudentDetails() {
 
 // ===== DATA HANDLING LOGIC =====
 async function addData(tabName, data) {
-    await sheetDbFetch(`?sheet=${tabName}`, {
+    const payload = {
+        action: 'add',
+        sheetName: tabName,
+        data: data
+    };
+    await googleScriptFetch({
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ data: [data] })
+        body: JSON.stringify(payload),
+        headers: { 'Content-Type': 'application/json' }
     });
-    loadAllData(); // Reload all data to reflect changes
+    loadAllData();
 }
 
 async function deleteData(tabName, key, value) {
     if (confirm(`هل أنت متأكد من الحذف؟`)) {
-        await sheetDbFetch(`/${key}/${value}?sheet=${tabName}`, { method: 'DELETE' });
-        loadAllData(); // Reload all data
+        const payload = {
+            action: 'delete',
+            sheetName: tabName,
+            key: key,
+            value: value
+        };
+        await googleScriptFetch({
+            method: 'POST',
+            body: JSON.stringify(payload),
+            headers: { 'Content-Type': 'application/json' }
+        });
+        loadAllData();
     }
 }
 
@@ -551,9 +602,37 @@ function addGroup(e) {
     addData('Groups', data).then(() => e.target.reset());
 }
 
+function generateUniqueStudentCode() {
+    let newCode;
+    let isUnique = false;
+    do {
+        newCode = Math.floor(10000 + Math.random() * 90000).toString();
+        if (!allStudents.some(student => student.barcode === newCode)) {
+            isUnique = true;
+        }
+    } while (!isUnique);
+    return newCode;
+}
+
 function addStudent(e) {
     e.preventDefault();
-    const studentBarcode = `STU-${Date.now()}`;
+    const customCode = document.getElementById('student-code').value.trim();
+    let studentBarcode;
+
+    if (customCode) {
+        if (!/^\d{5}$/.test(customCode)) {
+            alert("خطأ: كود الطالب يجب أن يتكون من 5 أرقام فقط.");
+            return;
+        }
+        if (allStudents.some(student => student.barcode === customCode)) {
+            alert("خطأ: هذا الكود مستخدم بالفعل. يرجى إدخال كود آخر أو تركه فارغاً.");
+            return;
+        }
+        studentBarcode = customCode;
+    } else {
+        studentBarcode = generateUniqueStudentCode();
+    }
+
     const data = {
         id: `STU-ID-${Date.now()}`,
         name: document.getElementById('name').value,
@@ -563,7 +642,7 @@ function addStudent(e) {
         barcode: studentBarcode
     };
     addData('Students', data).then(() => {
-        alert(`تمت إضافة الطالب بنجاح! كود الطالب (للباركود) هو: ${studentBarcode}`);
+        alert(`تمت إضافة الطالب بنجاح! كود الطالب هو: ${studentBarcode}`);
         e.target.reset();
     });
 }
@@ -641,7 +720,7 @@ function saveGrades() {
         id: `EXM-${Date.now()}`,
         name: document.getElementById('exam-name').value,
         groupId: document.getElementById('exam-group').value,
-        grades: JSON.stringify(grades) // Store grades as a JSON string
+        grades: JSON.stringify(grades)
     };
 
     addData('Exams', data).then(() => {
