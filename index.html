@@ -5,19 +5,19 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>نظام إدارة المركز التعليمي (Google Apps Script)</title>
     
-    <link rel="stylesheet" href="[https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.rtl.min.css](https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.rtl.min.css)">
-    <link rel="stylesheet" href="[https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css](https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css)">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.rtl.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
     
     <style>
         body { 
             background-color: #f8f9fa; 
             font-family: 'Tajawal', sans-serif; 
         }
-        @import url('[https://fonts.googleapis.com/css2?family=Tajawal:wght@400;700&display=swap](https://fonts.googleapis.com/css2?family=Tajawal:wght@400;700&display=swap)');
+        @import url('https://fonts.googleapis.com/css2?family=Tajawal:wght@400;700&display=swap');
         
         #login-screen, #loader-screen { 
             position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
-            background-color: #343a40; display: flex; justify-content: center; align-items: center; z-index: 9999; 
+            background-color: #343a40; display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 9999; 
         }
         #login-box { 
             background: white; padding: 2rem; border-radius: 0.5rem; width: 100%; max-width: 400px; box-shadow: 0 0 15px rgba(0,0,0,0.2); 
@@ -69,6 +69,9 @@
             <button type="submit" class="btn btn-primary w-100">دخول</button>
             <div id="login-error" class="text-danger mt-2" style="display: none;">كلمة المرور غير صحيحة.</div>
         </form>
+        <hr>
+        <button id="test-connection-btn" class="btn btn-outline-secondary w-100">اختبار الاتصال بقاعدة البيانات</button>
+        <div id="test-connection-result" class="mt-2"></div>
     </div>
 </div>
 
@@ -229,9 +232,23 @@
     </div>
 </div>
 
-<div class="modal fade" id="receiptModal" tabindex="-1"><div class="modal-dialog"><div class="modal-content"><div class="modal-header"><h5 class="modal-title">إيصال استلام</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div><div class="modal-body" id="receipt-modal-content"></div><div class="modal-footer"><button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إغلاق</button><button type="button" class="btn btn-primary" onclick="printReceipt()">طباعة</button></div></div></div></div>
+<div class="modal fade" id="receiptModal" tabindex="-1" aria-labelledby="receiptModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="receiptModalLabel">إيصال استلام</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body" id="receipt-modal-content"></div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إغلاق</button>
+                <button type="button" class="btn btn-primary" onclick="printReceipt()">طباعة</button>
+            </div>
+        </div>
+    </div>
+</div>
 
-<script src="[https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js](https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js)"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 
 <script>
 // ===================================================================================
@@ -239,16 +256,11 @@
 // ===================================================================================
 // 1. اتبع دليل الإعداد الذي تم تزويدك به لنشر الكود كـ "Web App".
 // 2. الصق رابط تطبيق الويب (Web app URL) الذي حصلت عليه هنا.
-const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwf3RPrAEtcrhpY3xy4c2EuCUr3Xbm9XgLAgd6xbXINusAm6Q_uSAYaClsNqYP6p_fTUw/exec";
+const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwND5NIt5EB5LKkC8Hdz-P0b5c0rEiDY4DuUCRhGvVrc8Y6-UUg52pAMDZMuX36HLl0dQ/exec";
 
 // كلمة المرور للدخول إلى النظام
-const APP_PASSWORD = '123456789'; // يمكنك تغييرها
+const APP_PASSWORD = '123'; // يمكنك تغييرها
 // ===================================================================================
-
-if (GOOGLE_SCRIPT_URL.includes("الصق هنا")) {
-    alert("خطأ في الإعداد: يرجى لصق رابط تطبيق الويب (Web app URL) الخاص بك من Google Apps Script في متغير GOOGLE_SCRIPT_URL داخل الكود.");
-    throw new Error("Google Apps Script URL is not configured.");
-}
 
 // Global state
 let currentStudentDetailsId = null;
@@ -260,28 +272,39 @@ let allAttendance = [];
 let allPayments = [];
 
 // ===== API HELPER =====
-async function googleScriptFetch(options = {}) {
+async function getData(sheetName) {
+    const url = `${GOOGLE_SCRIPT_URL}?sheet=${sheetName}&${new Date().getTime()}`; // Prevent caching
     try {
-        const response = await fetch(GOOGLE_SCRIPT_URL, options);
-        if (!response.ok) {
-            const errorText = await response.text();
-            console.error(`Google Script Error (${response.status}):`, errorText);
-            throw new Error('فشل الاتصال بـ Google Script.');
-        }
+        const response = await fetch(url, { redirect: 'follow' });
+        if (!response.ok) throw new Error(`Network response was not ok: ${response.statusText}`);
         const result = await response.json();
-        if(result.error) {
-            console.error("Error from script:", result.error);
-            throw new Error(result.error);
-        }
+        if (result.error) throw new Error(result.error);
         return result;
     } catch (error) {
-        console.error('Fetch Error:', error);
-        alert('حدث خطأ في الشبكة. يرجى التحقق من اتصالك بالإنترنت ورابط Google Apps Script.');
-        return [];
+        console.error('Fetch Error (GET):', error);
+        throw error; // Re-throw to be caught by the caller
     }
 }
 
-// ===== AUTH LOGIC =====
+async function postData(payload) {
+    try {
+        const response = await fetch(GOOGLE_SCRIPT_URL, {
+            method: 'POST',
+            mode: 'cors', // Added for better cross-origin handling
+            body: JSON.stringify(payload),
+            headers: { 'Content-Type': 'text/plain;charset=utf-8' }, // Changed to text/plain for Apps Script
+        });
+        if (!response.ok) throw new Error(`Network response was not ok: ${response.statusText}`);
+        const result = await response.json();
+        if (result.error) throw new Error(result.error);
+        return result;
+    } catch (error) {
+        console.error('Fetch Error (POST):', error);
+        throw error; // Re-throw to be caught by the caller
+    }
+}
+
+// ===== AUTH LOGIC & CONNECTION TEST =====
 function handleLogin(e) {
     e.preventDefault();
     const password = document.getElementById('password').value;
@@ -290,6 +313,28 @@ function handleLogin(e) {
         checkLogin();
     } else {
         document.getElementById('login-error').style.display = 'block';
+    }
+}
+
+async function testConnection() {
+    const resultDiv = document.getElementById('test-connection-result');
+    resultDiv.className = 'mt-2';
+    resultDiv.innerHTML = `<div class="spinner-border spinner-border-sm" role="status"></div> جاري الاختبار...`;
+
+    if (GOOGLE_SCRIPT_URL.includes("الصق هنا")) {
+        resultDiv.className = 'mt-2 alert alert-danger';
+        resultDiv.innerHTML = '<strong>خطأ:</strong> لم تقم بلصق رابط تطبيق الويب في الكود.';
+        return;
+    }
+    
+    try {
+        await getData('Teachers'); // Test by fetching a known sheet
+        resultDiv.className = 'mt-2 alert alert-success';
+        resultDiv.innerHTML = '<strong>نجاح!</strong> الاتصال بقاعدة البيانات يعمل بشكل صحيح.';
+    } catch (error) {
+        resultDiv.className = 'mt-2 alert alert-danger';
+        resultDiv.innerHTML = `<strong>فشل الاتصال.</strong> تأكد من أنك قمت بنشر الكود في Apps Script بشكل صحيح وأن صلاحية الوصول مضبوطة على "Anyone".`;
+        console.error("Test Connection failed:", error);
     }
 }
 
@@ -325,6 +370,15 @@ function showPage(pageId, studentId = null) {
         }
     });
 
+    // Manually hide the offcanvas after a link is clicked on mobile
+    const offcanvasElement = document.getElementById('mobile-sidebar');
+    if (offcanvasElement && offcanvasElement.classList.contains('show')) {
+        const offcanvasInstance = bootstrap.Offcanvas.getInstance(offcanvasElement);
+        if (offcanvasInstance) {
+            offcanvasInstance.hide();
+        }
+    }
+
     if (pageId === 'student-details') renderStudentDetails();
 }
 
@@ -334,12 +388,12 @@ async function loadAllData() {
     
     try {
         const [teachersRes, groupsRes, studentsRes, attendanceRes, paymentsRes, examsRes] = await Promise.all([
-            googleScriptFetch({ method: 'GET', headers: { 'Accept': 'application/json' }, redirect: 'follow' }, '&sheet=Teachers'),
-            googleScriptFetch({ method: 'GET', headers: { 'Accept': 'application/json' }, redirect: 'follow' }, '&sheet=Groups'),
-            googleScriptFetch({ method: 'GET', headers: { 'Accept': 'application/json' }, redirect: 'follow' }, '&sheet=Students'),
-            googleScriptFetch({ method: 'GET', headers: { 'Accept': 'application/json' }, redirect: 'follow' }, '&sheet=Attendance'),
-            googleScriptFetch({ method: 'GET', headers: { 'Accept': 'application/json' }, redirect: 'follow' }, '&sheet=Payments'),
-            googleScriptFetch({ method: 'GET', headers: { 'Accept': 'application/json' }, redirect: 'follow' }, '&sheet=Exams')
+            getData('Teachers'),
+            getData('Groups'),
+            getData('Students'),
+            getData('Attendance'),
+            getData('Payments'),
+            getData('Exams')
         ]);
 
         allTeachers = teachersRes;
@@ -355,29 +409,6 @@ async function loadAllData() {
         alert("فشل تحميل البيانات. يرجى التأكد من صحة رابط Google Script وأنك قمت بنشره بشكل صحيح مع إعطاء صلاحية الوصول للجميع (Anyone).");
     } finally {
         document.getElementById('loader-screen').style.display = 'none';
-    }
-}
-
-// Overload googleScriptFetch for GET requests with parameters
-async function googleScriptFetch(options, params = '') {
-    const url = `${GOOGLE_SCRIPT_URL}${params}`;
-    try {
-        const response = await fetch(url, options);
-        if (!response.ok) {
-            const errorText = await response.text();
-            console.error(`Google Script Error (${response.status}):`, errorText);
-            throw new Error('فشل الاتصال بـ Google Script.');
-        }
-        const result = await response.json();
-        if(result.error) {
-            console.error("Error from script:", result.error);
-            throw new Error(result.error);
-        }
-        return result;
-    } catch (error) {
-        console.error('Fetch Error:', error);
-        alert('حدث خطأ في الشبكة. يرجى التحقق من اتصالك بالإنترنت ورابط Google Apps Script.');
-        return [];
     }
 }
 
@@ -555,11 +586,7 @@ async function addData(tabName, data) {
         sheetName: tabName,
         data: data
     };
-    await googleScriptFetch({
-        method: 'POST',
-        body: JSON.stringify(payload),
-        headers: { 'Content-Type': 'application/json' }
-    });
+    await postData(payload);
     loadAllData();
 }
 
@@ -571,11 +598,7 @@ async function deleteData(tabName, key, value) {
             key: key,
             value: value
         };
-        await googleScriptFetch({
-            method: 'POST',
-            body: JSON.stringify(payload),
-            headers: { 'Content-Type': 'application/json' }
-        });
+        await postData(payload);
         loadAllData();
     }
 }
@@ -733,14 +756,14 @@ function saveGrades() {
 // ===== APP INITIALIZATION =====
 function initializeApp() {
     const navItems = `
-        <li class="nav-item"><a class="nav-link active" onclick="showPage('dashboard')" data-bs-dismiss="offcanvas"><i class="bi bi-grid-1x2-fill"></i> لوحة التحكم</a></li>
-        <li class="nav-item"><a class="nav-link" onclick="showPage('teachers')" data-bs-dismiss="offcanvas"><i class="bi bi-person-video3"></i> المدرسون</a></li>
-        <li class="nav-item"><a class="nav-link" onclick="showPage('groups')" data-bs-dismiss="offcanvas"><i class="bi bi-collection-fill"></i> المجموعات</a></li>
-        <li class="nav-item"><a class="nav-link" onclick="showPage('students')" data-bs-dismiss="offcanvas"><i class="bi bi-people-fill"></i> الطلاب</a></li>
-        <li class="nav-item"><a class="nav-link" onclick="showPage('attendance')" data-bs-dismiss="offcanvas"><i class="bi bi-check-circle-fill"></i> الحضور والغياب</a></li>
-        <li class="nav-item"><a class="nav-link" onclick="showPage('grades')" data-bs-dismiss="offcanvas"><i class="bi bi-pencil-square"></i> الامتحانات والدرجات</a></li>
-        <li class="nav-item"><a class="nav-link" onclick="showPage('finance')" data-bs-dismiss="offcanvas"><i class="bi bi-cash-stack"></i> الإدارة المالية</a></li>
-        <li class="nav-item mt-3"><a class="nav-link text-warning" onclick="logout()" data-bs-dismiss="offcanvas"><i class="bi bi-box-arrow-right"></i> تسجيل الخروج</a></li>
+        <li class="nav-item"><a class="nav-link active" onclick="showPage('dashboard')"><i class="bi bi-grid-1x2-fill"></i> لوحة التحكم</a></li>
+        <li class="nav-item"><a class="nav-link" onclick="showPage('teachers')"><i class="bi bi-person-video3"></i> المدرسون</a></li>
+        <li class="nav-item"><a class="nav-link" onclick="showPage('groups')"><i class="bi bi-collection-fill"></i> المجموعات</a></li>
+        <li class="nav-item"><a class="nav-link" onclick="showPage('students')"><i class="bi bi-people-fill"></i> الطلاب</a></li>
+        <li class="nav-item"><a class="nav-link" onclick="showPage('attendance')"><i class="bi bi-check-circle-fill"></i> الحضور والغياب</a></li>
+        <li class="nav-item"><a class="nav-link" onclick="showPage('grades')"><i class="bi bi-pencil-square"></i> الامتحانات والدرجات</a></li>
+        <li class="nav-item"><a class="nav-link" onclick="showPage('finance')"><i class="bi bi-cash-stack"></i> الإدارة المالية</a></li>
+        <li class="nav-item mt-3"><a class="nav-link text-warning" onclick="logout()"><i class="bi bi-box-arrow-right"></i> تسجيل الخروج</a></li>
     `;
     document.getElementById('desktop-nav-links').innerHTML = navItems;
     document.getElementById('mobile-nav-links').innerHTML = navItems;
@@ -777,6 +800,7 @@ function printReceipt() {
 // Initial check
 document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('login-form').addEventListener('submit', handleLogin);
+    document.getElementById('test-connection-btn').addEventListener('click', testConnection);
     checkLogin();
 });
 </script>
